@@ -196,7 +196,7 @@ namespace PingMaker.Core
                 targetZDOID = targetChar.GetZDOID();
                 targetName = targetChar.GetHoverName();
                 targetLevel = targetChar.GetLevel();
-                targetPoint = targetChar.GetHeadPoint() + Vector3.up * 0.4f;
+                targetPoint = GetCreatureTargetPoint(targetChar);
             }
             else
             {
@@ -237,6 +237,29 @@ namespace PingMaker.Core
             );
 
             NetworkSync.SendPing(data);
+        }
+
+        /// <summary>
+        /// Безопасное получение точки над головой/центром существа для позиционирования пинга.
+        /// Защищено от NullReferenceException, если в префабе существа отсутствует ссылка m_head.
+        /// </summary>
+        public static Vector3 GetCreatureTargetPoint(Character? character)
+        {
+            if (character == null) return Vector3.zero;
+
+            try
+            {
+                return character.GetTopPoint() + Vector3.up * 0.2f;
+            }
+            catch {}
+
+            try
+            {
+                return character.GetCenterPoint() + Vector3.up * 0.4f;
+            }
+            catch {}
+
+            return character.transform.position + Vector3.up * 1.5f;
         }
 
         /// <summary>

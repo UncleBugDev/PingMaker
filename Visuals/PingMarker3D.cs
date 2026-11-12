@@ -253,6 +253,7 @@ namespace PingMaker.Visuals
                         m_targetCharacter = go.GetComponent<Character>();
                         if (m_targetCharacter != null)
                         {
+                            m_trackedTransform = m_targetCharacter.transform;
                             m_targetCharacter.m_onDeath += OnTargetDied;
                             if (m_targetCharacter.IsDead())
                             {
@@ -260,12 +261,6 @@ namespace PingMaker.Visuals
                                 return;
                             }
                         }
-                    }
-                    else if (m_elapsed > 1.2f)
-                    {
-                        // Существо удалено из сцены ZNetScene
-                        Destroy(gameObject);
-                        return;
                     }
                 }
             }
@@ -287,7 +282,26 @@ namespace PingMaker.Visuals
             Camera cam = Utils.GetMainCamera();
             if (cam == null) return;
 
-            Vector3 worldPos = m_trackedTransform != null ? m_trackedTransform.position : m_staticWorldPos;
+            Vector3 worldPos;
+            if (m_targetCharacter != null && m_targetCharacter.gameObject != null)
+            {
+                try
+                {
+                    worldPos = m_targetCharacter.GetCenterPoint() + Vector3.up * 0.2f;
+                }
+                catch
+                {
+                    worldPos = m_targetCharacter.transform.position + Vector3.up * 1.2f;
+                }
+            }
+            else if (m_trackedTransform != null)
+            {
+                worldPos = m_trackedTransform.position + Vector3.up * 0.8f;
+            }
+            else
+            {
+                worldPos = m_staticWorldPos;
+            }
 
             // Distance Calculation
             float distance = Vector3.Distance(cam.transform.position, worldPos);

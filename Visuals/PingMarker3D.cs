@@ -16,6 +16,7 @@ namespace PingMaker.Visuals
     {
         private PingPackageData m_data;
         private Transform? m_trackedTransform;
+        private Character? m_targetCharacter;
         private Vector3 m_staticWorldPos;
         private float m_duration;
         private float m_elapsed;
@@ -23,6 +24,10 @@ namespace PingMaker.Visuals
         // UI Components
         private RectTransform m_rect = null!;
         private CanvasGroup m_canvasGroup = null!;
+        private Image m_laserHazeImage = null!;
+        private RectTransform m_laserHazeRect = null!;
+        private Image m_laserPointImage = null!;
+        private RectTransform m_laserPointRect = null!;
         private Image m_iconImage = null!;
         private Image m_arrowImage = null!;
         private RectTransform m_arrowRect = null!;
@@ -34,7 +39,7 @@ namespace PingMaker.Visuals
         public string SenderName => m_data.SenderName;
         public Minimap.PinData? MapPin { get; set; }
 
-        public void Setup(PingPackageData data, Transform? trackedTarget = null, Minimap.PinData? mapPin = null)
+        public void Setup(PingPackageData data, Transform? trackedTarget = null, Minimap.PinData? mapPin = null, Character? targetCharacter = null)
         {
             m_data = data;
             m_trackedTransform = trackedTarget;
@@ -42,8 +47,31 @@ namespace PingMaker.Visuals
             m_duration = data.Duration > 0f ? data.Duration : 20f;
             m_elapsed = 0f;
             MapPin = mapPin;
+            m_targetCharacter = targetCharacter;
+
+            if (m_targetCharacter != null)
+            {
+                m_targetCharacter.m_onDeath += OnTargetDied;
+            }
+            else if (data.TargetCreatureZDOID != ZDOID.None && ZNetScene.instance != null)
+            {
+                GameObject go = ZNetScene.instance.FindInstance(data.TargetCreatureZDOID);
+                if (go != null)
+                {
+                    m_targetCharacter = go.GetComponent<Character>();
+                    if (m_targetCharacter != null)
+                    {
+                        m_targetCharacter.m_onDeath += OnTargetDied;
+                    }
+                }
+            }
 
             BuildUI();
+        }
+
+        private void OnTargetDied()
+        {
+            Destroy(gameObject);
         }
 
         private void BuildUI()
@@ -54,16 +82,46 @@ namespace PingMaker.Visuals
 
             m_canvasGroup = gameObject.AddComponent<CanvasGroup>();
 
-            // 1. Icon Object
-            GameObject iconObj = new GameObject("Icon", typeof(RectTransform), typeof(Image));
-            iconObj.transform.SetParent(transform, false);
-            RectTransform iconRect = iconObj.GetComponent<RectTransform>();
-            iconRect.sizeDelta = new Vector2(42f, 42f);
-            iconRect.anchoredPosition = Vector2.zero;
+            // 1. Ореол рассеивания лазерного луча (Laser Haze Bloom)
+            GameObject hazeObj = new GameObject("LaserHaze", typeof(RectTransform), typeof(Image));
+            hazeObj.transform.SetParent(transform, false);
+            m_laserHazeRect = hazeObj.GetComponent<RectTransform>();
+            m_laserHazeRect.sizeDelta = new Vector2(72f, 72f);
+            m_laserHazeRect.anchoredPosition = Vector2.zero;
 
-            m_iconImage = iconObj.GetComponent<Image>();
-            m_iconImage.sprite = ProceduralIcons.GetPingSprite(m_data.Category);
-            m_iconImage.color = m_data.PingColor;
+            m_laserHazeImage = hazeObj.GetComponent<Image>();
+            m_laserHazeImage.sprite = ProceduralIcons.GetLaserHazeSprite();
+            Color hazeColor = m_data.PingColor;
+            hazeColor.a = 0.65f;
+            m_laserHazeImage.color = hazeColor;
+            m_laserHazeImage.raycastTarget = false;
+
+            // 2. Центральная лазерная точка (Laser Point Core)
+            GameObject pointObj = new GameObject("LaserPoint", typeof(RectTransform), typeof(Image));
+            pointObj.transform.SetParent(transform, false);
+            m_laserPointRect = pointObj.GetComponent<RectTransform>();
+            m_laserPointRect.sizeDelta = new Vector2(26f, 26f);
+            m_laserPointRect.anchoredPosition = Vector2.zero;
+
+            m_laserPointImage = pointObj.GetComponent<Image>();
+            m_laserPointImage.sprite = ProceduralIcons.GetLaserPointSprite();
+            m_laserPointImage.color = m_data.PingColor;
+            m_laserPointImage.raycastTarget = false;
+
+            // 3. Тактический шеврон категории (если существо)
+            if (m_data.Category == PingCategory.Creature)
+            {
+                GameObject iconObj = new GameObject("TacticalIcon", typeof(RectTransform), typeof(Image));
+                iconObj.transform.SetParent(transform, false);
+                RectTransform iconRect = iconObj.GetComponent<RectTransform>();
+                iconRect.sizeDelta = new Vector2(38f, 38f);
+                iconRect.anchoredPosition = Vector2.zero;
+
+                m_iconImage = iconObj.GetComponent<Image>();
+                m_iconImage.sprite = ProceduralIcons.GetPingSprite(m_data.Category);
+                m_iconImage.color = m_data.PingColor;
+                m_iconImage.raycastTarget = false;
+            }
 
             // 2. Directional Arrow Object (for off-screen indication)
             GameObject arrowObj = new GameObject("Arrow", typeof(RectTransform), typeof(Image));
@@ -150,6 +208,42 @@ namespace PingMaker.Visuals
 
         private void Update()
         {
+            // Мгновенное удаление метки при гибели или уничтожении целевого существа
+            if (m_targetCharacter != null)
+            {
+                if (m_targetCharacter.IsDead() || m_targetCharacter.gameObject == null)
+                {
+                    Destroy(gameObject);
+                    return;
+                }
+            }
+            else if (m_data.TargetCreatureZDOID != ZDOID.None)
+            {
+                if (ZNetScene.instance != null)
+                {
+                    GameObject go = ZNetScene.instance.FindInstance(m_data.TargetCreatureZDOID);
+                    if (go != null)
+                    {
+                        m_targetCharacter = go.GetComponent<Character>();
+                        if (m_targetCharacter != null)
+                        {
+                            m_targetCharacter.m_onDeath += OnTargetDied;
+                            if (m_targetCharacter.IsDead())
+                            {
+                                Destroy(gameObject);
+                                return;
+                            }
+                        }
+                    }
+                    else if (m_elapsed > 1.2f)
+                    {
+                        // Существо удалено из сцены ZNetScene
+                        Destroy(gameObject);
+                        return;
+                    }
+                }
+            }
+
             m_elapsed += Time.deltaTime;
             if (m_elapsed >= m_duration)
             {
@@ -209,7 +303,6 @@ namespace PingMaker.Visuals
 
                 float maxX = (screenW * 0.5f) - margin;
                 float maxY = (screenH * 0.5f) - margin;
-
                 float factorX = Mathf.Abs(maxX / fromCenter.x);
                 float factorY = Mathf.Abs(maxY / fromCenter.y);
                 float factor = Mathf.Min(factorX, factorY);
@@ -247,14 +340,27 @@ namespace PingMaker.Visuals
 
             m_rect.position = clampedPos;
 
-            // Subtle pulsing scale
-            float pulse = 1.0f + 0.08f * Mathf.Sin(Time.time * 5.0f);
+            // Subtle pulsing scale for laser point & haze
+            float pulse = 1.0f + 0.07f * Mathf.Sin(Time.time * 5.0f);
             float scale = ModConfig.MarkerScale.Value * pulse;
             m_rect.localScale = new Vector3(scale, scale, 1.0f);
+
+            // Дымка лазера мягко дышит (pulsing bloom haze)
+            if (m_laserHazeRect != null)
+            {
+                float hazePulse = 1.0f + 0.15f * Mathf.Sin(Time.time * 4.0f);
+                m_laserHazeRect.localScale = new Vector3(hazePulse, hazePulse, 1.0f);
+            }
         }
 
         private void OnDestroy()
         {
+            if (m_targetCharacter != null)
+            {
+                m_targetCharacter.m_onDeath -= OnTargetDied;
+                m_targetCharacter = null;
+            }
+
             if (MapPin != null && Minimap.instance != null)
             {
                 Minimap.instance.RemovePin(MapPin);

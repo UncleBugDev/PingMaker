@@ -42,7 +42,10 @@ namespace PingMaker.Visuals
             m_elapsed = 0f;
             m_isInitialized = true;
 
-            ApplyMaterialProperties(m_baseColor * 2.0f);
+            m_character.m_onDeath += OnDeath;
+
+            // Мягкая контурная подсветка без ослепления текстур
+            ApplyMaterialProperties(m_baseColor * 0.28f);
         }
 
         public void Refresh(Color newColor, float duration)
@@ -51,7 +54,12 @@ namespace PingMaker.Visuals
             m_duration = duration > 0f ? duration : 18f;
             m_elapsed = 0f;
 
-            ApplyMaterialProperties(m_baseColor * 2.0f);
+            ApplyMaterialProperties(m_baseColor * 0.28f);
+        }
+
+        private void OnDeath()
+        {
+            Destroy(this);
         }
 
         private void Update()
@@ -63,7 +71,7 @@ namespace PingMaker.Visuals
             }
 
             // Автоматическое снятие подсветки при гибели существа
-            if (m_character.IsDead())
+            if (m_character.IsDead() || m_character.gameObject == null)
             {
                 Destroy(this);
                 return;
@@ -84,9 +92,9 @@ namespace PingMaker.Visuals
                 alpha = Mathf.Clamp01(remaining / 2.0f);
             }
 
-            // Пульсирующий синусоидальный эффект свечения
-            float pulse = 1.0f + 0.35f * Mathf.Sin(Time.time * 6.0f);
-            Color pulsedColor = m_baseColor * (pulse * 2.2f * alpha);
+            // Мягкая контурная обводка (интенсивность 0.25 - 0.35x), не перекрывающая текстуры и цвет кожи монстра
+            float pulse = 0.28f + 0.08f * Mathf.Sin(Time.time * 4.0f);
+            Color pulsedColor = m_baseColor * (pulse * alpha);
 
             ApplyMaterialProperties(pulsedColor);
         }
@@ -103,9 +111,13 @@ namespace PingMaker.Visuals
 
         private void OnDestroy()
         {
-            if (m_character != null && m_character.gameObject != null && MaterialMan.instance != null)
+            if (m_character != null)
             {
-                MaterialMan.instance.ResetValue(m_character.gameObject, s_emissionColor);
+                m_character.m_onDeath -= OnDeath;
+                if (m_character.gameObject != null && MaterialMan.instance != null)
+                {
+                    MaterialMan.instance.ResetValue(m_character.gameObject, s_emissionColor);
+                }
             }
         }
     }

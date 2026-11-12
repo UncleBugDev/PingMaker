@@ -11,6 +11,58 @@ namespace PingMaker.Core
     {
         private static readonly Dictionary<string, Sprite> s_spriteCache = new Dictionary<string, Sprite>();
 
+        public static Sprite GetLaserPointSprite()
+        {
+            const string key = "laser_point";
+            if (s_spriteCache.TryGetValue(key, out Sprite cached) && cached != null)
+            {
+                return cached;
+            }
+
+            Sprite generated = GenerateLaserPointSprite();
+            s_spriteCache[key] = generated;
+            return generated;
+        }
+
+        public static Sprite GetLaserHazeSprite()
+        {
+            const string key = "laser_haze";
+            if (s_spriteCache.TryGetValue(key, out Sprite cached) && cached != null)
+            {
+                return cached;
+            }
+
+            Sprite generated = GenerateLaserHazeSprite();
+            s_spriteCache[key] = generated;
+            return generated;
+        }
+
+        public static Sprite GetLockonCircleSprite()
+        {
+            const string key = "lockon_circle";
+            if (s_spriteCache.TryGetValue(key, out Sprite cached) && cached != null)
+            {
+                return cached;
+            }
+
+            Sprite generated = GenerateLockonCircleSprite();
+            s_spriteCache[key] = generated;
+            return generated;
+        }
+
+        public static Sprite GetLockonArrowSprite()
+        {
+            const string key = "lockon_arrow";
+            if (s_spriteCache.TryGetValue(key, out Sprite cached) && cached != null)
+            {
+                return cached;
+            }
+
+            Sprite generated = GenerateLockonArrowSprite();
+            s_spriteCache[key] = generated;
+            return generated;
+        }
+
         public static Sprite GetPingSprite(PingCategory category)
         {
             string key = $"ping_{category}";
@@ -579,6 +631,165 @@ namespace PingMaker.Core
                 int x = 13 + i;
                 int y = 8 + i;
                 SetPixelThick(pixels, size, x, y, new Color32(20, 20, 20, 255));
+            }
+
+            tex.SetPixels32(pixels);
+            tex.Apply();
+            return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);
+        }
+
+        private static Sprite GenerateLaserPointSprite()
+        {
+            const int size = 32;
+            Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
+            {
+                filterMode = FilterMode.Bilinear,
+                wrapMode = TextureWrapMode.Clamp
+            };
+            Color32[] pixels = new Color32[size * size];
+            Vector2 center = new Vector2((size - 1) * 0.5f, (size - 1) * 0.5f);
+
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float dist = Vector2.Distance(new Vector2(x, y), center);
+                    if (dist <= 4.0f)
+                    {
+                        // Сверхъяркое белое ядро точки
+                        pixels[y * size + x] = new Color32(255, 255, 255, 255);
+                    }
+                    else if (dist <= 6.5f)
+                    {
+                        // Плавный переход от ядра
+                        float t = (6.5f - dist) / 2.5f;
+                        byte alpha = (byte)(Mathf.Clamp01(t) * 255f);
+                        pixels[y * size + x] = new Color32(255, 255, 255, alpha);
+                    }
+                    else
+                    {
+                        pixels[y * size + x] = new Color32(0, 0, 0, 0);
+                    }
+                }
+            }
+
+            tex.SetPixels32(pixels);
+            tex.Apply();
+            return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);
+        }
+
+        private static Sprite GenerateLaserHazeSprite()
+        {
+            const int size = 64;
+            Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
+            {
+                filterMode = FilterMode.Bilinear,
+                wrapMode = TextureWrapMode.Clamp
+            };
+            Color32[] pixels = new Color32[size * size];
+            Vector2 center = new Vector2((size - 1) * 0.5f, (size - 1) * 0.5f);
+            float maxR = (size - 1) * 0.5f;
+
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float dist = Vector2.Distance(new Vector2(x, y), center);
+                    if (dist <= maxR)
+                    {
+                        // Экспоненциальное затухание ореола рассеивания лазера
+                        float factor = Mathf.Exp(-dist * 0.16f);
+                        byte alpha = (byte)(Mathf.Clamp01(factor) * 230f);
+                        pixels[y * size + x] = new Color32(255, 255, 255, alpha);
+                    }
+                    else
+                    {
+                        pixels[y * size + x] = new Color32(0, 0, 0, 0);
+                    }
+                }
+            }
+
+            tex.SetPixels32(pixels);
+            tex.Apply();
+            return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);
+        }
+
+        private static Sprite GenerateLockonCircleSprite()
+        {
+            const int size = 96;
+            Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
+            {
+                filterMode = FilterMode.Bilinear,
+                wrapMode = TextureWrapMode.Clamp
+            };
+            Color32[] pixels = new Color32[size * size];
+            Vector2 center = new Vector2((size - 1) * 0.5f, (size - 1) * 0.5f);
+
+            for (int i = 0; i < pixels.Length; i++) pixels[i] = new Color32(0, 0, 0, 0);
+
+            // Тактическое кольцо с угловыми рисками
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float dist = Vector2.Distance(new Vector2(x, y), center);
+                    // Тонкое аккуратное кольцо радиусом 36-39
+                    if (dist >= 35.5f && dist <= 39.0f)
+                    {
+                        float angle = Mathf.Atan2(y - center.y, x - center.x) * Mathf.Rad2Deg;
+                        if (angle < 0) angle += 360f;
+
+                        // Пропуски на углах (45, 135, 225, 315) для тактического вида
+                        float mod = angle % 90f;
+                        if (mod > 14f && mod < 76f)
+                        {
+                            pixels[y * size + x] = new Color32(255, 255, 255, 240);
+                        }
+                    }
+
+                    // 4 угловые тактические риски
+                    if (dist >= 31.0f && dist <= 43.0f)
+                    {
+                        float angle = Mathf.Atan2(y - center.y, x - center.x) * Mathf.Rad2Deg;
+                        if (angle < 0) angle += 360f;
+                        float mod = angle % 90f;
+                        if (mod < 2.5f || mod > 87.5f)
+                        {
+                            pixels[y * size + x] = new Color32(255, 255, 255, 255);
+                        }
+                    }
+                }
+            }
+
+            tex.SetPixels32(pixels);
+            tex.Apply();
+            return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);
+        }
+
+        private static Sprite GenerateLockonArrowSprite()
+        {
+            const int size = 48;
+            Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
+            {
+                filterMode = FilterMode.Bilinear,
+                wrapMode = TextureWrapMode.Clamp
+            };
+            Color32[] pixels = new Color32[size * size];
+            for (int i = 0; i < pixels.Length; i++) pixels[i] = new Color32(0, 0, 0, 0);
+
+            // Тактическая стрелочка вниз (V-образный шеврон)
+            // Вершина стрелки внизу: (24, 8), усы идут вверх-влево и вверх-вправо
+            for (int i = 0; i <= 14; i++)
+            {
+                // Левое крыло
+                int lx = 24 - i;
+                int ly = 8 + i * 2;
+                SetPixelThick(pixels, size, lx, ly, new Color32(255, 255, 255, 255));
+
+                // Правое крыло
+                int rx = 24 + i;
+                int ry = 8 + i * 2;
+                SetPixelThick(pixels, size, rx, ry, new Color32(255, 255, 255, 255));
             }
 
             tex.SetPixels32(pixels);

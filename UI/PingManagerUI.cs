@@ -41,6 +41,7 @@ namespace PingMaker.UI
             m_scaler.matchWidthOrHeight = 0.5f;
 
             gameObject.AddComponent<GraphicRaycaster>();
+            TargetLockonReticle.EnsureExists(transform);
         }
 
         public void SpawnPing(PingPackageData data)
@@ -52,6 +53,7 @@ namespace PingMaker.UI
             markerObj.transform.SetParent(transform, false);
 
             Transform? trackedTransform = null;
+            Character? targetCharacter = null;
 
             // If creature ZDOID was provided, find its live head transform
             if (data.TargetCreatureZDOID != ZDOID.None && ZNetScene.instance != null)
@@ -59,12 +61,12 @@ namespace PingMaker.UI
                 GameObject creatureGO = ZNetScene.instance.FindInstance(data.TargetCreatureZDOID);
                 if (creatureGO != null)
                 {
-                    Character character = creatureGO.GetComponent<Character>();
-                    if (character != null)
+                    targetCharacter = creatureGO.GetComponent<Character>();
+                    if (targetCharacter != null)
                     {
-                        trackedTransform = character.transform;
+                        trackedTransform = targetCharacter.transform;
                         // Apply creature highlight
-                        CreatureHighlighter.ApplyHighlight(character, data.PingColor, ModConfig.CreatureHighlightDuration.Value);
+                        CreatureHighlighter.ApplyHighlight(targetCharacter, data.PingColor, ModConfig.CreatureHighlightDuration.Value);
                     }
                 }
             }
@@ -104,7 +106,7 @@ namespace PingMaker.UI
             }
 
             PingMarker3D marker = markerObj.AddComponent<PingMarker3D>();
-            marker.Setup(data, trackedTransform, mapPin);
+            marker.Setup(data, trackedTransform, mapPin, targetCharacter);
             m_activeMarkers.Add(marker);
 
             PlayPingAudio();

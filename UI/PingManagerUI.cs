@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using PingMaker.Configuration;
+using PingMaker.Core;
 using PingMaker.Network;
 using PingMaker.Visuals;
 using UnityEngine;
@@ -93,8 +94,11 @@ namespace PingMaker.UI
                     {
                         mapPin.m_animate = true;
                         mapPin.m_doubleSize = true;
+                        Sprite whiteSprite = ProceduralIcons.GetWhiteMapPingSprite();
+                        mapPin.m_icon = whiteSprite;
                         if (mapPin.m_iconElement != null)
                         {
+                            mapPin.m_iconElement.sprite = whiteSprite;
                             mapPin.m_iconElement.color = data.PingColor;
                         }
                     }
@@ -114,12 +118,30 @@ namespace PingMaker.UI
 
         public void UpdateMapPinsColor()
         {
+            Sprite whiteSprite = ProceduralIcons.GetWhiteMapPingSprite();
             for (int i = 0; i < m_activeMarkers.Count; i++)
             {
                 PingMarker3D marker = m_activeMarkers[i];
-                if (marker != null && marker.MapPin != null && marker.MapPin.m_iconElement != null)
+                if (marker != null && marker.MapPin != null)
                 {
-                    marker.MapPin.m_iconElement.color = marker.Data.PingColor;
+                    if (marker.MapPin.m_icon != whiteSprite)
+                    {
+                        marker.MapPin.m_icon = whiteSprite;
+                    }
+
+                    if (marker.MapPin.m_iconElement != null)
+                    {
+                        if (marker.MapPin.m_iconElement.sprite != whiteSprite)
+                        {
+                            marker.MapPin.m_iconElement.sprite = whiteSprite;
+                        }
+                        marker.MapPin.m_iconElement.color = marker.Data.PingColor;
+                    }
+
+                    if (marker.MapPin.m_NamePinData?.PinNameText != null)
+                    {
+                        marker.MapPin.m_NamePinData.PinNameText.color = marker.Data.PingColor;
+                    }
                 }
             }
         }

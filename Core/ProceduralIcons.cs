@@ -141,6 +141,19 @@ namespace PingMaker.Core
             return generated;
         }
 
+        public static Sprite GetWhiteMapPingSprite()
+        {
+            const string key = "white_map_ping";
+            if (s_spriteCache.TryGetValue(key, out Sprite cached) && cached != null)
+            {
+                return cached;
+            }
+
+            Sprite generated = GenerateWhiteMapPingSprite();
+            s_spriteCache[key] = generated;
+            return generated;
+        }
+
         private static Sprite GeneratePlayerArrowMarkerSprite()
         {
             const int size = 48;
@@ -790,6 +803,70 @@ namespace PingMaker.Core
                 int rx = 24 + i;
                 int ry = 8 + i * 2;
                 SetPixelThick(pixels, size, rx, ry, new Color32(255, 255, 255, 255));
+            }
+
+            tex.SetPixels32(pixels);
+            tex.Apply();
+            return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);
+        }
+
+        private static Sprite GenerateWhiteMapPingSprite()
+        {
+            const int size = 64;
+            Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
+            {
+                filterMode = FilterMode.Bilinear,
+                wrapMode = TextureWrapMode.Clamp
+            };
+            Color32[] pixels = new Color32[size * size];
+            Vector2 center = new Vector2((size - 1) * 0.5f, (size - 1) * 0.5f);
+
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float dist = Vector2.Distance(new Vector2(x, y), center);
+                    byte alpha = 0;
+
+                    // Центральная точка (радиус до 4.5)
+                    if (dist <= 4.0f)
+                    {
+                        alpha = 255;
+                    }
+                    else if (dist <= 5.2f)
+                    {
+                        alpha = (byte)(Mathf.Clamp01((5.2f - dist) / 1.2f) * 255f);
+                    }
+                    // Внутреннее кольцо (радиус 10 - 13.5)
+                    else if (dist >= 9.0f && dist <= 14.5f)
+                    {
+                        float d = Mathf.Abs(dist - 11.8f);
+                        if (d <= 1.8f)
+                        {
+                            alpha = (byte)(Mathf.Clamp01((1.8f - d) / 1.8f) * 250f);
+                        }
+                    }
+                    // Среднее кольцо (радиус 18 - 22.5)
+                    else if (dist >= 17.0f && dist <= 23.5f)
+                    {
+                        float d = Mathf.Abs(dist - 20.2f);
+                        if (d <= 1.8f)
+                        {
+                            alpha = (byte)(Mathf.Clamp01((1.8f - d) / 1.8f) * 240f);
+                        }
+                    }
+                    // Внешнее кольцо (радиус 26 - 30.5)
+                    else if (dist >= 25.0f && dist <= 31.5f)
+                    {
+                        float d = Mathf.Abs(dist - 28.2f);
+                        if (d <= 1.8f)
+                        {
+                            alpha = (byte)(Mathf.Clamp01((1.8f - d) / 1.8f) * 225f);
+                        }
+                    }
+
+                    pixels[y * size + x] = new Color32(255, 255, 255, alpha);
+                }
             }
 
             tex.SetPixels32(pixels);

@@ -1,0 +1,14 @@
+# Build outputs
+bin/
+obj/
+package/
+
+# IDE / User-specific
+.vs/
+.vscode/
+*.user
+*.suo
+
+# Decompiled research files
+*_decompiled.cs
+decompiled/

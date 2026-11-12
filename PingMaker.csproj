@@ -1,0 +1,162 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <AssemblyName>PingMaker</AssemblyName>
+    <RootNamespace>PingMaker</RootNamespace>
+    <Version>1.0.0</Version>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);MSB3277</NoWarn>
+    <RepositoryUrl>https://github.com/UncleBugDev/PingMaker</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://github.com/UncleBugDev/PingMaker</PackageProjectUrl>
+
+    <!-- Path configuration: automatically falls back to standard Valheim and Thunderstore profile locations -->
+    <ValheimPath Condition="'$(ValheimPath)' == ''">E:\SteamLibrary\steamapps\common\Valheim</ValheimPath>
+    <ValheimManaged Condition="'$(ValheimManaged)' == ''">$(ValheimPath)\valheim_Data\Managed</ValheimManaged>
+    <BepInExCorePath Condition="'$(BepInExCorePath)' == ''">$(AppData)\Thunderstore Mod Manager\DataFolder\Valheim\profiles\67 udarov\BepInEx\core</BepInExCorePath>
+    <BepInExCorePath Condition="!Exists('$(BepInExCorePath)')">$(ValheimPath)\BepInEx\core</BepInExCorePath>
+
+    <!-- Thunderstore packaging settings -->
+    <ThunderstorePackageDir>$(ProjectDir)package</ThunderstorePackageDir>
+    <ThunderstoreStagingDir>$(ProjectDir)obj\thunderstore_staging</ThunderstoreStagingDir>
+    <PackageZipName>$(AssemblyName)_v$(Version).zip</PackageZipName>
+    <DeployToProfile Condition="'$(DeployToProfile)' == ''">false</DeployToProfile>
+  </PropertyGroup>
+
+  <!-- Ignore research, decompiled or scratch files from compilation -->
+  <ItemGroup>
+    <Compile Remove="*_decompiled.cs" />
+    <Compile Remove="decompiled\**" />
+    <None Include="*_decompiled.cs" />
+  </ItemGroup>
+
+  <!-- BepInEx and HarmonyX references (Private=false ensures engine/loader dlls are not copied into package) -->
+  <ItemGroup>
+    <Reference Include="BepInEx">
+      <HintPath>$(BepInExCorePath)\BepInEx.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="0Harmony">
+      <HintPath>$(BepInExCorePath)\0Harmony.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- Valheim and Unity references -->
+  <ItemGroup>
+    <Reference Include="assembly_valheim">
+      <HintPath>$(ValheimManaged)\assembly_valheim.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="assembly_utils">
+      <HintPath>$(ValheimManaged)\assembly_utils.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="assembly_guiutils">
+      <HintPath>$(ValheimManaged)\assembly_guiutils.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="gui_framework">
+      <HintPath>$(ValheimManaged)\gui_framework.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Unity.TextMeshPro">
+      <HintPath>$(ValheimManaged)\Unity.TextMeshPro.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>$(ValheimManaged)\UnityEngine.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(ValheimManaged)\UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>$(ValheimManaged)\UnityEngine.UI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UIModule">
+      <HintPath>$(ValheimManaged)\UnityEngine.UIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.TextRenderingModule">
+      <HintPath>$(ValheimManaged)\UnityEngine.TextRenderingModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Splatform">
+      <HintPath>$(ValheimManaged)\Splatform.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>$(ValheimManaged)\UnityEngine.IMGUIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.InputLegacyModule">
+      <HintPath>$(ValheimManaged)\UnityEngine.InputLegacyModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.PhysicsModule">
+      <HintPath>$(ValheimManaged)\UnityEngine.PhysicsModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.AudioModule">
+      <HintPath>$(ValheimManaged)\UnityEngine.AudioModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.AssetBundleModule">
+      <HintPath>$(ValheimManaged)\UnityEngine.AssetBundleModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.AnimationModule">
+      <HintPath>$(ValheimManaged)\UnityEngine.AnimationModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.ParticleSystemModule">
+      <HintPath>$(ValheimManaged)\UnityEngine.ParticleSystemModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- Automated Thunderstore Zip Packaging Target -->
+  <Target Name="PackageThunderstore" AfterTargets="Build" Condition="'$(Configuration)' == 'Release' Or '$(PackageThunderstore)' == 'true'">
+    <Message Importance="high" Text="========================================" />
+    <Message Importance="high" Text="Packaging Thunderstore Release: $(PackageZipName)..." />
+    <Message Importance="high" Text="========================================" />
+
+    <!-- Prepare clean staging folder -->
+    <RemoveDir Directories="$(ThunderstoreStagingDir)" />
+    <MakeDir Directories="$(ThunderstoreStagingDir)" />
+    <MakeDir Directories="$(ThunderstorePackageDir)" />
+
+    <!-- Copy compiled plugin DLL -->
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(ThunderstoreStagingDir)" />
+
+    <!-- Copy Thunderstore metadata files -->
+    <Copy SourceFiles="$(ProjectDir)manifest.json" DestinationFolder="$(ThunderstoreStagingDir)" Condition="Exists('$(ProjectDir)manifest.json')" />
+    <Copy SourceFiles="$(ProjectDir)icon.png" DestinationFolder="$(ThunderstoreStagingDir)" Condition="Exists('$(ProjectDir)icon.png')" />
+    <Copy SourceFiles="$(ProjectDir)README.md" DestinationFolder="$(ThunderstoreStagingDir)" Condition="Exists('$(ProjectDir)README.md')" />
+    <Copy SourceFiles="$(ProjectDir)CHANGELOG.md" DestinationFolder="$(ThunderstoreStagingDir)" Condition="Exists('$(ProjectDir)CHANGELOG.md')" />
+
+    <!-- Pack root into compliant Thunderstore zip archive -->
+    <Delete Files="$(ThunderstorePackageDir)\$(PackageZipName)" Condition="Exists('$(ThunderstorePackageDir)\$(PackageZipName)')" />
+    <ZipDirectory SourceDirectory="$(ThunderstoreStagingDir)" DestinationFile="$(ThunderstorePackageDir)\$(PackageZipName)" Overwrite="true" />
+
+    <Message Importance="high" Text="[SUCCESS] Thunderstore zip ready at: $(ThunderstorePackageDir)\$(PackageZipName)" />
+  </Target>
+
+  <!-- Optional direct deployment to active Thunderstore profile for instant testing -->
+  <Target Name="DeployPlugin" AfterTargets="Build" Condition="'$(DeployToProfile)' == 'true'">
+    <PropertyGroup>
+      <TargetProfilePluginDir>$(AppData)\Thunderstore Mod Manager\DataFolder\Valheim\profiles\67 udarov\BepInEx\plugins\PingMaker</TargetProfilePluginDir>
+    </PropertyGroup>
+    <MakeDir Directories="$(TargetProfilePluginDir)" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(TargetProfilePluginDir)" />
+    <Message Importance="high" Text="[DEPLOY] Copied $(TargetFileName) to active profile plugin folder: $(TargetProfilePluginDir)" />
+  </Target>
+
+</Project>

@@ -1,0 +1,9 @@
+{
+  "name": "PingMaker",
+  "version_number": "1.0.0",
+  "website_url": "https://github.com/UncleBugDev/PingMaker",
+  "description": "Multiplayer 3D world ping system for Valheim with personal player color palette, creature silhouette highlighting, and distance indicators.",
+  "dependencies": [
+    "denikson-BepInExPack_Valheim-5.4.2202"
+  ]
+}

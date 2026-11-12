@@ -32,14 +32,16 @@ namespace PingMaker.Visuals
 
         public PingPackageData Data => m_data;
         public string SenderName => m_data.SenderName;
+        public Minimap.PinData? MapPin { get; set; }
 
-        public void Setup(PingPackageData data, Transform? trackedTarget = null)
+        public void Setup(PingPackageData data, Transform? trackedTarget = null, Minimap.PinData? mapPin = null)
         {
             m_data = data;
             m_trackedTransform = trackedTarget;
             m_staticWorldPos = data.WorldPosition;
             m_duration = data.Duration > 0f ? data.Duration : 20f;
             m_elapsed = 0f;
+            MapPin = mapPin;
 
             BuildUI();
         }
@@ -249,6 +251,15 @@ namespace PingMaker.Visuals
             float pulse = 1.0f + 0.08f * Mathf.Sin(Time.time * 5.0f);
             float scale = ModConfig.MarkerScale.Value * pulse;
             m_rect.localScale = new Vector3(scale, scale, 1.0f);
+        }
+
+        private void OnDestroy()
+        {
+            if (MapPin != null && Minimap.instance != null)
+            {
+                Minimap.instance.RemovePin(MapPin);
+                MapPin = null;
+            }
         }
     }
 }

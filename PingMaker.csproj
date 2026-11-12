@@ -152,11 +152,14 @@
   <!-- Optional direct deployment to active Thunderstore profile for instant testing -->
   <Target Name="DeployPlugin" AfterTargets="Build" Condition="'$(DeployToProfile)' == 'true'">
     <PropertyGroup>
-      <TargetProfilePluginDir>$(AppData)\Thunderstore Mod Manager\DataFolder\Valheim\profiles\67 udarov\BepInEx\plugins\PingMaker</TargetProfilePluginDir>
+      <TargetProfilePluginDir>$(AppData)\Thunderstore Mod Manager\DataFolder\Valheim\profiles\67 udarov\BepInEx\plugins\UncleBugDev-PingMaker</TargetProfilePluginDir>
     </PropertyGroup>
     <MakeDir Directories="$(TargetProfilePluginDir)" />
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(TargetProfilePluginDir)" />
-    <Message Importance="high" Text="[DEPLOY] Copied $(TargetFileName) to active profile plugin folder: $(TargetProfilePluginDir)" />
+    <Copy SourceFiles="$(ProjectDir)manifest.json" DestinationFolder="$(TargetProfilePluginDir)" Condition="Exists('$(ProjectDir)manifest.json')" />
+    <Copy SourceFiles="$(ProjectDir)icon.png" DestinationFolder="$(TargetProfilePluginDir)" Condition="Exists('$(ProjectDir)icon.png')" />
+    <Copy SourceFiles="$(ProjectDir)README.md" DestinationFolder="$(TargetProfilePluginDir)" Condition="Exists('$(ProjectDir)README.md')" />
+    <Message Importance="high" Text="[DEPLOY] Copied $(TargetFileName) and metadata to active profile plugin folder: $(TargetProfilePluginDir)" />
   </Target>
 
 </Project>

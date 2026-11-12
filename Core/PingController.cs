@@ -120,6 +120,7 @@ namespace PingMaker.Core
 
         private bool IsInputBlocked()
         {
+            if (PingSettingsGUI.IsOpen) return true;
             if (Chat.instance != null && Chat.instance.HasFocus()) return true;
             if (Console.IsVisible()) return true;
             if (Minimap.IsOpen()) return true;

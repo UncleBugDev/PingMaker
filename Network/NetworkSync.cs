@@ -51,43 +51,10 @@ namespace PingMaker.Network
 
         private static void HandleIncomingPing(PingPackageData data)
         {
-            // 1. Отображение 3D-маркера в мире личным цветом игрока
+            // Отображение 3D-маркера в мире и временной метки на карте
             if (PingManagerUI.Instance != null)
             {
                 PingManagerUI.Instance.SpawnPing(data);
-            }
-
-            // 2. Дублирование на миникарту личным цветом игрока
-            if (ModConfig.SyncToMinimap.Value && Minimap.instance != null)
-            {
-                try
-                {
-                    string pinName = !string.IsNullOrEmpty(data.TargetName)
-                        ? $"{data.SenderName} ({data.TargetName})"
-                        : $"{data.SenderName}: Пинг";
-
-                    Minimap.PinData pin = Minimap.instance.AddPin(
-                        data.WorldPosition,
-                        Minimap.PinType.Ping,
-                        pinName,
-                        save: false,
-                        isChecked: false
-                    );
-
-                    if (pin != null)
-                    {
-                        pin.m_animate = true;
-                        pin.m_doubleSize = true;
-                        if (pin.m_iconElement != null)
-                        {
-                            pin.m_iconElement.color = data.PingColor;
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    PingMakerPlugin.Log.LogWarning($"[PingMaker] Ошибка при добавлении метки на миникарту: {ex.Message}");
-                }
             }
         }
 

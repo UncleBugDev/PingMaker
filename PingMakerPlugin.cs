@@ -59,10 +59,13 @@ namespace PingMaker
                         RadialMenu.EnsureExists(PingManagerUI.Instance.transform);
                     }
 
+                    // Создание внутриигровой панели настроек (по кнопке ' / э)
+                    PingSettingsGUI.EnsureExists();
+
                     // Создание контроллера ввода и прицеливания
                     PingController.EnsureExists();
 
-                    Log.LogInfo($"[{ModName}] Системы UI, ввода и сетевой синхронизации запущены.");
+                    Log.LogInfo($"[{ModName}] Системы UI, настроек, ввода и сетевой синхронизации запущены.");
                 }
                 catch (System.Exception ex)
                 {
@@ -90,6 +93,27 @@ namespace PingMaker
                     secondaryAttack = false;
                     secondaryAttackHold = false;
                 }
+            }
+        }
+
+        [HarmonyPatch(typeof(PlayerController), "TakeInput")]
+        private static class SuppressPlayerInputWhenSettingsOpenPatch
+        {
+            private static void Postfix(ref bool __result)
+            {
+                if (PingSettingsGUI.IsOpen)
+                {
+                    __result = false;
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(Minimap), "UpdatePins")]
+        private static class MinimapUpdatePinsPatch
+        {
+            private static void Postfix()
+            {
+                PingManagerUI.Instance?.UpdateMapPinsColor();
             }
         }
     }

@@ -8,6 +8,7 @@ namespace PingMaker.Configuration
         // Controls
         public static ConfigEntry<KeyCode> PingKey = null!;
         public static ConfigEntry<KeyCode> AlternativePingKey = null!;
+        public static ConfigEntry<KeyCode> SettingsKey = null!;
         public static ConfigEntry<float> HoldTimeForMenu = null!;
 
         // Personal Color Settings
@@ -34,22 +35,29 @@ namespace PingMaker.Configuration
             PingKey = config.Bind(
                 "1. Controls",
                 "PingKey",
-                KeyCode.T,
-                new ConfigDescription("Основная клавиша для установки пинга и вызова радиального меню выбора личного цвета (по умолчанию: T).")
+                KeyCode.Mouse4,
+                new ConfigDescription("Основная клавиша для установки пинга (по умолчанию: Mouse4 / Боковая кнопка мыши).")
             );
 
             AlternativePingKey = config.Bind(
                 "1. Controls",
                 "AlternativePingKey",
-                KeyCode.None,
-                new ConfigDescription("Дополнительная клавиша для пинга / вызова меню (например, KeyCode.G).")
+                KeyCode.G,
+                new ConfigDescription("Дополнительная клавиша для пинга (по умолчанию: G).")
+            );
+
+            SettingsKey = config.Bind(
+                "1. Controls",
+                "SettingsKey",
+                KeyCode.Quote,
+                new ConfigDescription("Клавиша открытия панели настроек мода PingMaker (по умолчанию: ' / русская э).")
             );
 
             HoldTimeForMenu = config.Bind(
                 "1. Controls",
                 "HoldTimeForMenu",
                 0.20f,
-                new ConfigDescription("Время удержания клавиши (в секундах) для открытия кругового меню выбора личного цвета.", new AcceptableValueRange<float>(0.1f, 1.0f))
+                new ConfigDescription("Время удержания клавиши (в секундах) для открытия радиального меню выбора личного цвета.", new AcceptableValueRange<float>(0.1f, 1.0f))
             );
 
             // Personal Color
@@ -92,7 +100,7 @@ namespace PingMaker.Configuration
             MaxActivePingsPerPlayer = config.Bind(
                 "3. General",
                 "MaxActivePingsPerPlayer",
-                4,
+                3,
                 new ConfigDescription("Максимальное количество одновременно активных меток от одного игрока.", new AcceptableValueRange<int>(1, 10))
             );
 
@@ -138,6 +146,11 @@ namespace PingMaker.Configuration
                 1.0f,
                 new ConfigDescription("Громкость звукового сигнала при установке пинга.", new AcceptableValueRange<float>(0.0f, 1.0f))
             );
+        }
+
+        public static void Save()
+        {
+            PingMakerPlugin.Instance?.Config.Save();
         }
     }
 }

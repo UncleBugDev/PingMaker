@@ -69,11 +69,57 @@ namespace PingMaker.UI
                 }
             }
 
+            // Create temporary minimap pin
+            Minimap.PinData? mapPin = null;
+            if (ModConfig.SyncToMinimap.Value && Minimap.instance != null)
+            {
+                try
+                {
+                    string pinName = !string.IsNullOrEmpty(data.TargetName)
+                        ? $"{data.SenderName} ({data.TargetName})"
+                        : $"{data.SenderName}: Пинг";
+
+                    mapPin = Minimap.instance.AddPin(
+                        data.WorldPosition,
+                        Minimap.PinType.Ping,
+                        pinName,
+                        save: false,
+                        isChecked: false
+                    );
+
+                    if (mapPin != null)
+                    {
+                        mapPin.m_animate = true;
+                        mapPin.m_doubleSize = true;
+                        if (mapPin.m_iconElement != null)
+                        {
+                            mapPin.m_iconElement.color = data.PingColor;
+                        }
+                    }
+                }
+                catch (System.Exception ex)
+                {
+                    PingMakerPlugin.Log.LogWarning($"[PingMaker] Ошибка создания метки на карте: {ex.Message}");
+                }
+            }
+
             PingMarker3D marker = markerObj.AddComponent<PingMarker3D>();
-            marker.Setup(data, trackedTransform);
+            marker.Setup(data, trackedTransform, mapPin);
             m_activeMarkers.Add(marker);
 
             PlayPingAudio();
+        }
+
+        public void UpdateMapPinsColor()
+        {
+            for (int i = 0; i < m_activeMarkers.Count; i++)
+            {
+                PingMarker3D marker = m_activeMarkers[i];
+                if (marker != null && marker.MapPin != null && marker.MapPin.m_iconElement != null)
+                {
+                    marker.MapPin.m_iconElement.color = marker.Data.PingColor;
+                }
+            }
         }
 
         private void CleanupPlayerPings(string senderName, int maxAllowed)

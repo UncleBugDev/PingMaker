@@ -27,6 +27,8 @@ namespace PingMaker.Configuration
         public static ConfigEntry<bool> ShowPlayerName = null!;
         public static ConfigEntry<bool> ShowOffscreenArrow = null!;
         public static ConfigEntry<bool> ColorizeMapPlayers = null!;
+        public static ConfigEntry<int> TargetReticleMode = null!;
+        public static ConfigEntry<int> ReticleArrowStyle = null!;
         public static ConfigEntry<float> MarkerScale = null!;
         public static ConfigEntry<float> AudioVolume = null!;
 
@@ -139,6 +141,20 @@ namespace PingMaker.Configuration
                 "ColorizeMapPlayers",
                 true,
                 new ConfigDescription("Окрашивать ли трекеры и стрелки направления игроков на карте и миникарте в их выбранный личный цвет.")
+            );
+
+            TargetReticleMode = config.Bind(
+                "4. Visuals",
+                "TargetReticleMode",
+                0, // 0 = Both, 1 = OnPingOnly, 2 = OnHoverOnly
+                new ConfigDescription("Режим работы тактического прицела захвата цели (0 = И при наведении, и при установке метки [по умолчанию], 1 = Только при установке метки на существо, 2 = Только при наведении прицела).", new AcceptableValueRange<int>(0, 2))
+            );
+
+            ReticleArrowStyle = config.Bind(
+                "4. Visuals",
+                "ReticleArrowStyle",
+                0, // 0 = Diagonal (сверху-справа, как на рисунке), 1 = Top (сверху)
+                new ConfigDescription("Стиль стрелочки захвата цели (0 = Диагональная стрелка с верхнего правого угла [по умолчанию], 1 = Стрелка строго сверху).", new AcceptableValueRange<int>(0, 1))
             );
 
             MarkerScale = config.Bind(

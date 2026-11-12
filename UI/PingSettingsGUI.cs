@@ -46,7 +46,7 @@ namespace PingMaker.UI
         {
             Instance = this;
             float w = 520f;
-            float h = 570f;
+            float h = 650f;
             m_windowRect = new Rect((Screen.width - w) * 0.5f, (Screen.height - h) * 0.5f, w, h);
         }
 
@@ -111,7 +111,7 @@ namespace PingMaker.UI
             m_isRebinding = false;
 
             float w = 520f;
-            float h = 570f;
+            float h = 650f;
             m_windowRect = new Rect((Screen.width - w) * 0.5f, (Screen.height - h) * 0.5f, w, h);
 
             ZCursor.LockState = CursorLockMode.None;
@@ -225,6 +225,35 @@ namespace PingMaker.UI
             ModConfig.ShowOffscreenArrow.Value = GUILayout.Toggle(ModConfig.ShowOffscreenArrow.Value, "  Отображать стрелку на краю экрана, если метка вне обзора", m_toggleStyle);
             ModConfig.SyncToMinimap.Value = GUILayout.Toggle(ModConfig.SyncToMinimap.Value, "  Дублировать пинг временной отметкой на миникарте", m_toggleStyle);
             ModConfig.ColorizeMapPlayers.Value = GUILayout.Toggle(ModConfig.ColorizeMapPlayers.Value, "  Окрашивать стрелки направления игроков на карте в их личный цвет", m_toggleStyle);
+
+            GUILayout.Space(6f);
+
+            // Режим работы прицела захвата цели
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Режим прицела захвата:", m_labelStyle, GUILayout.Width(180f));
+            string modeName = ModConfig.TargetReticleMode.Value switch
+            {
+                1 => "Только при метке на существо",
+                2 => "Только при наведении прицела",
+                _ => "При наведении и метке (Стандарт)"
+            };
+            if (GUILayout.Button($"[  {modeName}  ]", m_buttonStyle, GUILayout.Height(28f)))
+            {
+                ModConfig.TargetReticleMode.Value = (ModConfig.TargetReticleMode.Value + 1) % 3;
+            }
+            GUILayout.EndHorizontal();
+
+            // Стиль стрелочки захвата
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Стиль стрелки захвата:", m_labelStyle, GUILayout.Width(180f));
+            string styleName = ModConfig.ReticleArrowStyle.Value == 0
+                ? "↘ Диагональная (по умолчанию)"
+                : "↓ Сверху";
+            if (GUILayout.Button($"[  {styleName}  ]", m_buttonStyle, GUILayout.Height(28f)))
+            {
+                ModConfig.ReticleArrowStyle.Value = ModConfig.ReticleArrowStyle.Value == 0 ? 1 : 0;
+            }
+            GUILayout.EndHorizontal();
 
             GUILayout.FlexibleSpace();
 

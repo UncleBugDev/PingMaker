@@ -72,7 +72,7 @@ namespace PingMaker.Core
             Camera cam = Utils.GetMainCamera();
 
             // Обновление тактического захвата цели (Lock-on Reticle) при наведении на существо
-            if (cam != null && !m_isHolding)
+            if (cam != null && !m_isHolding && ModConfig.TargetReticleMode.Value != 1)
             {
                 Character? hoveredCreature = FindTargetCreature(cam, ModConfig.MaxPingDistance.Value);
                 TargetLockonReticle.Instance?.SetTarget(hoveredCreature);

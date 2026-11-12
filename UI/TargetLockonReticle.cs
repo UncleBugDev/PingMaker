@@ -73,7 +73,17 @@ namespace PingMaker.UI
             arrowObj.transform.SetParent(transform, false);
             m_arrowRect = arrowObj.GetComponent<RectTransform>();
             m_arrowRect.sizeDelta = new Vector2(28f, 28f);
-            m_arrowRect.anchoredPosition = new Vector2(0f, 48f);
+
+            if (ModConfig.ReticleArrowStyle.Value == 0) // Diagonal (по умолчанию)
+            {
+                m_arrowRect.anchoredPosition = new Vector2(38f, 38f);
+                m_arrowRect.localRotation = Quaternion.Euler(0f, 0f, -45f);
+            }
+            else // Top
+            {
+                m_arrowRect.anchoredPosition = new Vector2(0f, 48f);
+                m_arrowRect.localRotation = Quaternion.identity;
+            }
 
             m_arrowImage = arrowObj.GetComponent<Image>();
             m_arrowImage.sprite = ProceduralIcons.GetLockonArrowSprite();
@@ -161,9 +171,18 @@ namespace PingMaker.UI
             // Плавное вращение кольца
             m_circleRect.Rotate(0f, 0f, -25f * Time.deltaTime);
 
-            // Плавная вертикальная анимация покачивания стрелочки (bobbing)
+            // Плавная анимация покачивания стрелочки (bobbing)
             float bob = Mathf.Sin(Time.time * 8.0f) * 4.0f;
-            m_arrowRect.anchoredPosition = new Vector2(0f, 48f + bob);
+            if (ModConfig.ReticleArrowStyle.Value == 0) // Diagonal (по умолчанию)
+            {
+                m_arrowRect.anchoredPosition = new Vector2(38f + bob * 0.707f, 38f + bob * 0.707f);
+                m_arrowRect.localRotation = Quaternion.Euler(0f, 0f, -45f);
+            }
+            else // Top
+            {
+                m_arrowRect.anchoredPosition = new Vector2(0f, 48f + bob);
+                m_arrowRect.localRotation = Quaternion.identity;
+            }
         }
     }
 }

@@ -28,7 +28,10 @@ namespace PingMaker.Visuals
         private RectTransform m_laserHazeRect = null!;
         private Image m_laserPointImage = null!;
         private RectTransform m_laserPointRect = null!;
-        private Image m_iconImage = null!;
+        private RectTransform? m_creatureRingRect;
+        private Image? m_creatureRingImage;
+        private RectTransform? m_creatureArrowRect;
+        private Image? m_creatureArrowImage;
         private Image m_arrowImage = null!;
         private RectTransform m_arrowRect = null!;
         private Text m_playerText = null!;
@@ -108,19 +111,42 @@ namespace PingMaker.Visuals
             m_laserPointImage.color = m_data.PingColor;
             m_laserPointImage.raycastTarget = false;
 
-            // 3. Тактический шеврон категории (если существо)
-            if (m_data.Category == PingCategory.Creature)
+            // 3. Тактическое кольцо захвата цели и стрелка для существ (вместо черепа, перекрывавшего монстра)
+            if (m_data.Category == PingCategory.Creature && ModConfig.TargetReticleMode.Value != 2)
             {
-                GameObject iconObj = new GameObject("TacticalIcon", typeof(RectTransform), typeof(Image));
-                iconObj.transform.SetParent(transform, false);
-                RectTransform iconRect = iconObj.GetComponent<RectTransform>();
-                iconRect.sizeDelta = new Vector2(38f, 38f);
-                iconRect.anchoredPosition = Vector2.zero;
+                // 3.1. Кольцо захвата цели
+                GameObject ringObj = new GameObject("CreatureRing", typeof(RectTransform), typeof(Image));
+                ringObj.transform.SetParent(transform, false);
+                m_creatureRingRect = ringObj.GetComponent<RectTransform>();
+                m_creatureRingRect.sizeDelta = new Vector2(62f, 62f);
+                m_creatureRingRect.anchoredPosition = Vector2.zero;
 
-                m_iconImage = iconObj.GetComponent<Image>();
-                m_iconImage.sprite = ProceduralIcons.GetPingSprite(m_data.Category);
-                m_iconImage.color = m_data.PingColor;
-                m_iconImage.raycastTarget = false;
+                m_creatureRingImage = ringObj.GetComponent<Image>();
+                m_creatureRingImage.sprite = ProceduralIcons.GetLockonCircleSprite();
+                m_creatureRingImage.color = m_data.PingColor;
+                m_creatureRingImage.raycastTarget = false;
+
+                // 3.2. Указующая стрелочка (диагональная или сверху)
+                GameObject arrowLockObj = new GameObject("CreatureArrow", typeof(RectTransform), typeof(Image));
+                arrowLockObj.transform.SetParent(transform, false);
+                m_creatureArrowRect = arrowLockObj.GetComponent<RectTransform>();
+                m_creatureArrowRect.sizeDelta = new Vector2(24f, 24f);
+
+                if (ModConfig.ReticleArrowStyle.Value == 0) // Diagonal (по умолчанию)
+                {
+                    m_creatureArrowRect.anchoredPosition = new Vector2(36f, 36f);
+                    m_creatureArrowRect.localRotation = Quaternion.Euler(0f, 0f, -45f);
+                }
+                else // Top
+                {
+                    m_creatureArrowRect.anchoredPosition = new Vector2(0f, 44f);
+                    m_creatureArrowRect.localRotation = Quaternion.identity;
+                }
+
+                m_creatureArrowImage = arrowLockObj.GetComponent<Image>();
+                m_creatureArrowImage.sprite = ProceduralIcons.GetLockonArrowSprite();
+                m_creatureArrowImage.color = m_data.PingColor;
+                m_creatureArrowImage.raycastTarget = false;
             }
 
             // 2. Directional Arrow Object (for off-screen indication)
@@ -350,6 +376,28 @@ namespace PingMaker.Visuals
             {
                 float hazePulse = 1.0f + 0.15f * Mathf.Sin(Time.time * 4.0f);
                 m_laserHazeRect.localScale = new Vector3(hazePulse, hazePulse, 1.0f);
+            }
+
+            // Плавное вращение тактического кольца захвата
+            if (m_creatureRingRect != null)
+            {
+                m_creatureRingRect.Rotate(0f, 0f, -20f * Time.deltaTime);
+            }
+
+            // Плавное покачивание стрелочки захвата цели
+            if (m_creatureArrowRect != null)
+            {
+                float bob = Mathf.Sin(Time.time * 8.0f) * 3.0f;
+                if (ModConfig.ReticleArrowStyle.Value == 0) // Diagonal (по умолчанию)
+                {
+                    m_creatureArrowRect.anchoredPosition = new Vector2(36f + bob * 0.707f, 36f + bob * 0.707f);
+                    m_creatureArrowRect.localRotation = Quaternion.Euler(0f, 0f, -45f);
+                }
+                else // Top
+                {
+                    m_creatureArrowRect.anchoredPosition = new Vector2(0f, 44f + bob);
+                    m_creatureArrowRect.localRotation = Quaternion.identity;
+                }
             }
         }
 

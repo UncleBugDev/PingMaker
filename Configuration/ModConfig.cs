@@ -26,6 +26,7 @@ namespace PingMaker.Configuration
         public static ConfigEntry<bool> ShowDistance = null!;
         public static ConfigEntry<bool> ShowPlayerName = null!;
         public static ConfigEntry<bool> ShowOffscreenArrow = null!;
+        public static ConfigEntry<bool> ColorizeMapPlayers = null!;
         public static ConfigEntry<float> MarkerScale = null!;
         public static ConfigEntry<float> AudioVolume = null!;
 
@@ -131,6 +132,13 @@ namespace PingMaker.Configuration
                 "ShowOffscreenArrow",
                 true,
                 new ConfigDescription("Отображать ли направляющую стрелку на краю экрана, если маркер вне поля зрения.")
+            );
+
+            ColorizeMapPlayers = config.Bind(
+                "4. Visuals",
+                "ColorizeMapPlayers",
+                true,
+                new ConfigDescription("Окрашивать ли трекеры и стрелки направления игроков на карте и миникарте в их выбранный личный цвет.")
             );
 
             MarkerScale = config.Bind(

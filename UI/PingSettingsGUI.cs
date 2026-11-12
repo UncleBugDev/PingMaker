@@ -1,14 +1,17 @@
 using System;
 using PingMaker.Configuration;
+using PingMaker.Core;
+using PingMaker.Network;
+using PingMaker.Visuals;
 using UnityEngine;
 
 namespace PingMaker.UI
 {
     /// <summary>
-    /// Внутриигровая панель настроек мода PingMaker.
+    /// Внутриигровая панель настроек мода PingMaker в аутентичном стиле Valheim.
     /// Открывается по нажатию клавиши ' (русская э).
-    /// Позволяет назначить любую клавишу пинга (клавиатура или кнопки мыши Mouse4, Mouse3 и др.),
-    /// выбрать личный цвет и настроить параметры отображения.
+    /// Позволяет настроить клавишу пинга (клавиатура или кнопки мыши), выбрать цвет викинга,
+    /// а также настроить параметры 3D-меток и трекеров на карте.
     /// </summary>
     public class PingSettingsGUI : MonoBehaviour
     {
@@ -18,8 +21,17 @@ namespace PingMaker.UI
         private bool m_isOpen;
         private bool m_isRebinding;
         private Rect m_windowRect;
+
+        // Стили и шрифты в стиле Valheim
+        private Font? m_valheimFont;
+        private GUIStyle? m_windowStyle;
         private GUIStyle? m_headerStyle;
+        private GUIStyle? m_buttonStyle;
+        private GUIStyle? m_rebindButtonStyle;
+        private GUIStyle? m_previewBoxStyle;
         private GUIStyle? m_labelStyle;
+        private GUIStyle? m_toggleStyle;
+        private GUIStyle? m_saveButtonStyle;
 
         public static void EnsureExists()
         {
@@ -33,8 +45,8 @@ namespace PingMaker.UI
         private void Awake()
         {
             Instance = this;
-            float w = 480f;
-            float h = 530f;
+            float w = 520f;
+            float h = 570f;
             m_windowRect = new Rect((Screen.width - w) * 0.5f, (Screen.height - h) * 0.5f, w, h);
         }
 
@@ -48,6 +60,13 @@ namespace PingMaker.UI
             else if (m_isOpen && Input.GetKeyDown(KeyCode.Escape))
             {
                 Close();
+            }
+
+            // Удержание курсора мыши разблокированным и видимым каждый кадр пока открыто меню
+            if (m_isOpen)
+            {
+                ZCursor.LockState = CursorLockMode.None;
+                ZCursor.Show();
             }
 
             // Перехват любой клавиши мыши или клавиатуры в режиме переназначения
@@ -91,12 +110,12 @@ namespace PingMaker.UI
             m_isOpen = true;
             m_isRebinding = false;
 
-            float w = 480f;
-            float h = 530f;
+            float w = 520f;
+            float h = 570f;
             m_windowRect = new Rect((Screen.width - w) * 0.5f, (Screen.height - h) * 0.5f, w, h);
 
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
+            ZCursor.LockState = CursorLockMode.None;
+            ZCursor.Show();
         }
 
         public void Close()
@@ -106,8 +125,8 @@ namespace PingMaker.UI
 
             if (Player.m_localPlayer != null && !Menu.IsVisible() && !InventoryGui.IsVisible() && !Minimap.IsOpen())
             {
-                Cursor.lockState = CursorLockMode.Locked;
-                Cursor.visible = false;
+                ZCursor.LockState = CursorLockMode.Locked;
+                ZCursor.Hide();
             }
 
             ModConfig.Save();
@@ -120,107 +139,109 @@ namespace PingMaker.UI
             InitStyles();
 
             GUI.color = Color.white;
-            GUI.backgroundColor = new Color(0.12f, 0.14f, 0.18f, 0.96f);
+            GUI.backgroundColor = Color.white;
 
-            m_windowRect = GUI.Window(984321, m_windowRect, DrawWindowContents, "PingMaker — Настройки пинга");
+            m_windowRect = GUI.Window(984321, m_windowRect, DrawWindowContents, "ᚱ • НАСТРОЙКИ PINGMAKER • ᛉ", m_windowStyle);
         }
 
         private void DrawWindowContents(int windowID)
         {
-            GUILayout.Space(6f);
+            GUILayout.Space(4f);
 
-            // 1. Controls Section
-            GUILayout.Label("1. Кнопка установки пинга", m_headerStyle);
+            // Подзаголовок
             GUILayout.BeginHorizontal();
-            GUILayout.Label("Текущая клавиша:", GUILayout.Width(140f));
+            GUILayout.FlexibleSpace();
+            GUILayout.Label("<color=#D8CFBE>« Личные метки, подсветка и трекеры карты »</color>", m_labelStyle);
+            GUILayout.FlexibleSpace();
+            GUILayout.EndHorizontal();
 
-            string buttonText = m_isRebinding
-                ? ">>> НАЖМИТЕ ЛЮБУЮ КНОПКУ МЫШИ/КЛАВИАТУРЫ <<<"
-                : $"[ {FormatKeyCodeName(ModConfig.PingKey.Value)} ] (Кликните для смены)";
+            GUILayout.Space(8f);
 
-            Color prevBg = GUI.backgroundColor;
-            if (m_isRebinding)
-            {
-                GUI.backgroundColor = new Color(1f, 0.85f, 0.2f, 1f);
-            }
-            else
-            {
-                GUI.backgroundColor = new Color(0.25f, 0.35f, 0.5f, 1f);
-            }
+            // ================= 1. Блок клавиши пинга =================
+            GUILayout.Label("  ᚠ  1. КЛАВИША БЫСТРОГО ПИНГА", m_headerStyle);
+            GUILayout.Space(4f);
 
-            if (GUILayout.Button(buttonText, GUILayout.Height(32f)))
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Текущая клавиша:", m_labelStyle, GUILayout.Width(130f));
+
+            string keyText = m_isRebinding
+                ? ">>> ᛉ НАЖМИТЕ КНОПКУ МЫШИ / КЛАВИАТУРЫ ᛉ <<<"
+                : $"[ ᚱ  {FormatKeyCodeName(ModConfig.PingKey.Value)}  ᚱ ]";
+
+            GUIStyle rebindStyle = m_isRebinding ? m_rebindButtonStyle! : m_buttonStyle!;
+            if (GUILayout.Button(keyText, rebindStyle, GUILayout.Height(34f)))
             {
                 m_isRebinding = !m_isRebinding;
             }
-            GUI.backgroundColor = prevBg;
             GUILayout.EndHorizontal();
 
-            GUILayout.Space(12f);
+            GUILayout.Space(10f);
 
-            // 2. Personal Color Section
-            GUILayout.Label("2. Личный цвет игрока (все ваши метки будут этого цвета)", m_headerStyle);
+            // ================= 2. Блок выбора цвета =================
+            GUILayout.Label("  ᛟ  2. ЛИЧНЫЙ ЦВЕТ ВИКИНГА (МЕТКИ И КАРТА)", m_headerStyle);
+            GUILayout.Space(4f);
 
             int activeIdx = ModConfig.ActiveColorIndex.Value;
             PlayerColorDefinition activeDef = PlayerColors.GetColorById(activeIdx);
 
-            // Preview Box
-            GUILayout.BeginVertical(GUI.skin.box);
+            // Плашка предпросмотра
+            GUILayout.BeginVertical(m_previewBoxStyle);
             GUILayout.BeginHorizontal();
-            GUILayout.Label("Предпросмотр метки:", GUILayout.Width(140f));
+            GUILayout.Label("Предпросмотр:", m_labelStyle, GUILayout.Width(110f));
 
             string playerName = Player.m_localPlayer != null ? Player.m_localPlayer.GetPlayerName() : "Викинг";
             string hex = ColorUtility.ToHtmlStringRGB(activeDef.Color);
-            GUILayout.Label($"<color=#{hex}><b>● {playerName} [{activeDef.Name}] [24m]</b></color>", m_labelStyle);
+            GUILayout.Label($"<color=#{hex}><b>● {playerName} [{activeDef.Name}] [24m]</b>  —  ваша стрелка на карте</color>", m_labelStyle);
             GUILayout.EndHorizontal();
             GUILayout.EndVertical();
 
             GUILayout.Space(6f);
 
-            // 8-Color Grid (4 in row 1, 4 in row 2)
+            // Сетка цветов
             DrawColorPaletteGrid(activeIdx);
 
-            GUILayout.Space(12f);
+            GUILayout.Space(10f);
 
-            // 3. Gameplay Settings Section
-            GUILayout.Label("3. Параметры отображения", m_headerStyle);
+            // ================= 3. Блок параметров отображения =================
+            GUILayout.Label("  ᛏ  3. ПАРАМЕТРЫ ОТОБРАЖЕНИЯ", m_headerStyle);
+            GUILayout.Space(4f);
 
-            // Ping Duration Slider
+            // Длительность пинга в мире
             GUILayout.BeginHorizontal();
-            GUILayout.Label($"Длительность метки в мире: {Mathf.RoundToInt(ModConfig.PingDuration.Value)} сек", GUILayout.Width(220f));
+            GUILayout.Label($"Длительность 3D-метки: <color=#E5B85C><b>{Mathf.RoundToInt(ModConfig.PingDuration.Value)} сек</b></color>", m_labelStyle, GUILayout.Width(220f));
             ModConfig.PingDuration.Value = GUILayout.HorizontalSlider(ModConfig.PingDuration.Value, 5f, 60f);
             GUILayout.EndHorizontal();
 
-            // Highlight Duration Slider
+            // Подсветка силуэта
             GUILayout.BeginHorizontal();
-            GUILayout.Label($"Подсветка силуэта монстра: {Mathf.RoundToInt(ModConfig.CreatureHighlightDuration.Value)} сек", GUILayout.Width(220f));
+            GUILayout.Label($"Подсветка монстров: <color=#E5B85C><b>{Mathf.RoundToInt(ModConfig.CreatureHighlightDuration.Value)} сек</b></color>", m_labelStyle, GUILayout.Width(220f));
             ModConfig.CreatureHighlightDuration.Value = GUILayout.HorizontalSlider(ModConfig.CreatureHighlightDuration.Value, 5f, 30f);
             GUILayout.EndHorizontal();
 
             GUILayout.Space(4f);
 
-            // Toggles
-            ModConfig.ShowDistance.Value = GUILayout.Toggle(ModConfig.ShowDistance.Value, "  Отображать дистанцию в метрах [Xm]");
-            ModConfig.ShowOffscreenArrow.Value = GUILayout.Toggle(ModConfig.ShowOffscreenArrow.Value, "  Отображать стрелку-указатель на краю экрана, если метка вне обзора");
-            ModConfig.SyncToMinimap.Value = GUILayout.Toggle(ModConfig.SyncToMinimap.Value, "  Дублировать пинг временной точкой на миникарте");
+            // Чекбоксы
+            ModConfig.ShowDistance.Value = GUILayout.Toggle(ModConfig.ShowDistance.Value, "  Отображать дистанцию до цели [Xm]", m_toggleStyle);
+            ModConfig.ShowOffscreenArrow.Value = GUILayout.Toggle(ModConfig.ShowOffscreenArrow.Value, "  Отображать стрелку на краю экрана, если метка вне обзора", m_toggleStyle);
+            ModConfig.SyncToMinimap.Value = GUILayout.Toggle(ModConfig.SyncToMinimap.Value, "  Дублировать пинг временной отметкой на миникарте", m_toggleStyle);
+            ModConfig.ColorizeMapPlayers.Value = GUILayout.Toggle(ModConfig.ColorizeMapPlayers.Value, "  Окрашивать стрелки направления игроков на карте в их личный цвет", m_toggleStyle);
 
             GUILayout.FlexibleSpace();
 
-            // Close button
-            GUI.backgroundColor = new Color(0.2f, 0.6f, 0.35f, 1f);
-            if (GUILayout.Button("СОХРАНИТЬ И ЗАКРЫТЬ (или клавиша Esc / ')", GUILayout.Height(36f)))
+            // Кнопка сохранения и закрытия
+            if (GUILayout.Button("ᛉ  СОХРАНИТЬ И ЗАКРЫТЬ  (Esc / ')  ᛉ", m_saveButtonStyle, GUILayout.Height(38f)))
             {
                 Close();
             }
-            GUI.backgroundColor = prevBg;
 
-            GUI.DragWindow(new Rect(0, 0, 10000, 24));
+            GUI.DragWindow(new Rect(0, 0, 10000, 28));
         }
 
         private void DrawColorPaletteGrid(int activeIdx)
         {
             PlayerColorDefinition[] palette = PlayerColors.Palette;
 
-            // Row 1: 0..3
+            // Ряд 1: 0..3
             GUILayout.BeginHorizontal();
             for (int i = 0; i < 4; i++)
             {
@@ -230,7 +251,7 @@ namespace PingMaker.UI
 
             GUILayout.Space(4f);
 
-            // Row 2: 4..7
+            // Ряд 2: 4..7
             GUILayout.BeginHorizontal();
             for (int i = 4; i < 8; i++)
             {
@@ -249,11 +270,20 @@ namespace PingMaker.UI
 
             string label = isActive ? $"✓ {def.Name}" : def.Name;
 
-            if (GUILayout.Button(label, GUILayout.Height(34f)))
+            if (GUILayout.Button(label, m_buttonStyle, GUILayout.Height(32f)))
             {
                 ModConfig.ActiveColorIndex.Value = def.Id;
                 ModConfig.CustomPlayerColor.Value = def.Color;
                 ModConfig.Save();
+
+                // Синхронизация нового цвета со всеми пирами
+                NetworkSync.BroadcastLocalPlayerColor();
+
+                // Мгновенное обновление стрелки на миникарте
+                if (Minimap.instance != null)
+                {
+                    PlayerMapTracker.UpdateLocalPlayer(Minimap.instance);
+                }
 
                 if (Player.m_localPlayer != null)
                 {
@@ -285,13 +315,81 @@ namespace PingMaker.UI
 
         private void InitStyles()
         {
+            if (m_valheimFont == null)
+            {
+                // Поиск оригинального шрифта Valheim в загруженных ресурсах
+                Font[] allFonts = Resources.FindObjectsOfTypeAll<Font>();
+                for (int i = 0; i < allFonts.Length; i++)
+                {
+                    Font f = allFonts[i];
+                    if (f != null && (f.name.Contains("Averia") || f.name.Contains("Norse") || f.name.Contains("Valheim")))
+                    {
+                        m_valheimFont = f;
+                        break;
+                    }
+                }
+            }
+
+            if (m_windowStyle == null)
+            {
+                m_windowStyle = new GUIStyle(GUI.skin.window)
+                {
+                    normal = { background = ProceduralIcons.GetVikingWindowTexture(), textColor = new Color(0.95f, 0.8f, 0.45f, 1f) },
+                    onNormal = { background = ProceduralIcons.GetVikingWindowTexture(), textColor = new Color(0.95f, 0.8f, 0.45f, 1f) },
+                    border = new RectOffset(14, 14, 14, 14),
+                    padding = new RectOffset(16, 16, 20, 16),
+                    font = m_valheimFont,
+                    fontStyle = FontStyle.Bold,
+                    fontSize = 15,
+                    alignment = TextAnchor.UpperCenter
+                };
+            }
+
             if (m_headerStyle == null)
             {
                 m_headerStyle = new GUIStyle(GUI.skin.label)
                 {
+                    normal = { background = ProceduralIcons.GetVikingBannerTexture(), textColor = new Color(1f, 0.88f, 0.52f, 1f) },
+                    border = new RectOffset(6, 6, 6, 6),
+                    padding = new RectOffset(10, 10, 5, 5),
+                    font = m_valheimFont,
                     fontStyle = FontStyle.Bold,
-                    fontSize = 13,
-                    normal = { textColor = new Color(1f, 0.85f, 0.35f, 1f) }
+                    fontSize = 12,
+                    alignment = TextAnchor.MiddleLeft
+                };
+            }
+
+            if (m_buttonStyle == null)
+            {
+                m_buttonStyle = new GUIStyle(GUI.skin.button)
+                {
+                    normal = { background = ProceduralIcons.GetVikingButtonTexture(false, false), textColor = new Color(0.92f, 0.88f, 0.82f, 1f) },
+                    hover = { background = ProceduralIcons.GetVikingButtonTexture(true, false), textColor = new Color(1f, 0.95f, 0.6f, 1f) },
+                    active = { background = ProceduralIcons.GetVikingButtonTexture(false, true), textColor = Color.white },
+                    border = new RectOffset(8, 8, 8, 8),
+                    font = m_valheimFont,
+                    fontStyle = FontStyle.Bold,
+                    fontSize = 12,
+                    alignment = TextAnchor.MiddleCenter
+                };
+            }
+
+            if (m_rebindButtonStyle == null)
+            {
+                m_rebindButtonStyle = new GUIStyle(m_buttonStyle)
+                {
+                    normal = { background = ProceduralIcons.GetVikingButtonTexture(true, false), textColor = new Color(1f, 0.9f, 0.2f, 1f) },
+                    fontStyle = FontStyle.Bold
+                };
+            }
+
+            if (m_previewBoxStyle == null)
+            {
+                m_previewBoxStyle = new GUIStyle(GUI.skin.box)
+                {
+                    normal = { background = ProceduralIcons.GetVikingPreviewBoxTexture() },
+                    border = new RectOffset(6, 6, 6, 6),
+                    padding = new RectOffset(10, 10, 6, 6)
                 };
             }
 
@@ -300,8 +398,31 @@ namespace PingMaker.UI
                 m_labelStyle = new GUIStyle(GUI.skin.label)
                 {
                     richText = true,
-                    fontSize = 13,
+                    font = m_valheimFont,
+                    fontSize = 12,
+                    normal = { textColor = new Color(0.9f, 0.85f, 0.78f, 1f) },
                     alignment = TextAnchor.MiddleLeft
+                };
+            }
+
+            if (m_toggleStyle == null)
+            {
+                m_toggleStyle = new GUIStyle(GUI.skin.toggle)
+                {
+                    font = m_valheimFont,
+                    fontSize = 12,
+                    normal = { textColor = new Color(0.88f, 0.84f, 0.78f, 1f) }
+                };
+            }
+
+            if (m_saveButtonStyle == null)
+            {
+                m_saveButtonStyle = new GUIStyle(m_buttonStyle)
+                {
+                    fontSize = 13,
+                    fontStyle = FontStyle.Bold,
+                    normal = { textColor = new Color(0.95f, 0.85f, 0.45f, 1f) },
+                    hover = { textColor = new Color(1f, 1f, 0.7f, 1f) }
                 };
             }
         }

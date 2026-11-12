@@ -5,6 +5,7 @@ using PingMaker.Configuration;
 using PingMaker.Core;
 using PingMaker.Network;
 using PingMaker.UI;
+using PingMaker.Visuals;
 using UnityEngine;
 
 namespace PingMaker
@@ -108,12 +109,44 @@ namespace PingMaker
             }
         }
 
+        [HarmonyPatch(typeof(GameCamera), nameof(GameCamera.UpdateMouseCapture))]
+        private static class GameCameraUpdateMouseCapturePatch
+        {
+            private static bool Prefix()
+            {
+                if (PingSettingsGUI.IsOpen)
+                {
+                    ZCursor.LockState = CursorLockMode.None;
+                    ZCursor.Show();
+                    return false;
+                }
+                return true;
+            }
+        }
+
         [HarmonyPatch(typeof(Minimap), "UpdatePins")]
         private static class MinimapUpdatePinsPatch
         {
             private static void Postfix()
             {
                 PingManagerUI.Instance?.UpdateMapPinsColor();
+
+                if (Minimap.instance != null)
+                {
+                    PlayerMapTracker.UpdateMinimap(Minimap.instance);
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(Minimap), "UpdatePlayerMarker")]
+        private static class MinimapUpdatePlayerMarkerPatch
+        {
+            private static void Postfix()
+            {
+                if (Minimap.instance != null)
+                {
+                    PlayerMapTracker.UpdateLocalPlayer(Minimap.instance);
+                }
             }
         }
     }

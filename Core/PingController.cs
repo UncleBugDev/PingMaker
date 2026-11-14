@@ -93,16 +93,19 @@ namespace PingMaker.Core
                 m_isHolding = false;
             }
 
-            // 2. Удержание клавиши: открываем радиальное меню палитры личного цвета
+            // 2. Удержание клавиши: открываем радиальное меню палитры личного цвета (если включено в конфиге)
             if (keyStay && m_pressStartTime > 0f)
             {
                 float heldDuration = Time.time - m_pressStartTime;
                 if (!m_isHolding && heldDuration >= ModConfig.HoldTimeForMenu.Value)
                 {
-                    m_isHolding = true;
-                    TargetLockonReticle.Instance?.SetTarget(null);
-                    Vector2 screenCenter = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
-                    RadialMenu.Instance?.Open(screenCenter);
+                    if (ModConfig.EnableRadialColorMenu.Value)
+                    {
+                        m_isHolding = true;
+                        TargetLockonReticle.Instance?.SetTarget(null);
+                        Vector2 screenCenter = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
+                        RadialMenu.Instance?.Open(screenCenter);
+                    }
                 }
             }
 
@@ -189,7 +192,7 @@ namespace PingMaker.Core
             int targetLevel = 1;
             PingCategory category;
 
-            if (targetChar != null && targetChar != Player.m_localPlayer)
+            if (IsValidTargetCreature(targetChar))
             {
                 // Захвачено существо!
                 category = PingCategory.Creature;
@@ -263,6 +266,19 @@ namespace PingMaker.Core
         }
 
         /// <summary>
+        /// Проверяет, является ли существо допустимой целью для захвата прицела и пинга.
+        /// Полностью исключает любых игроков (как локального, так и сетевых союзников).
+        /// </summary>
+        public static bool IsValidTargetCreature([System.Diagnostics.CodeAnalysis.NotNullWhen(true)] Character? ch)
+        {
+            if (ch == null) return false;
+            if (ch.gameObject == null) return false;
+            if (ch.IsDead()) return false;
+            if (ch.IsPlayer() || ch is Player) return false;
+            return true;
+        }
+
+        /// <summary>
         /// 3-уровневый универсальный алгоритм захвата существ.
         /// Не блокируется травой, кустами, листвой или мелкими триггерами.
         /// </summary>
@@ -275,7 +291,7 @@ namespace PingMaker.Core
             if (Player.m_localPlayer != null)
             {
                 Character hover = Player.m_localPlayer.GetHoverCreature();
-                if (hover != null && hover != Player.m_localPlayer && !hover.IsDead())
+                if (IsValidTargetCreature(hover))
                 {
                     return hover;
                 }
@@ -301,7 +317,7 @@ namespace PingMaker.Core
                         ch = hit.collider.attachedRigidbody.GetComponent<Character>();
                     }
 
-                    if (ch != null && ch != Player.m_localPlayer && !ch.IsDead())
+                    if (IsValidTargetCreature(ch))
                     {
                         // Проверка прямой видимости: не скрыто ли существо за горой или каменной стеной
                         Vector3 toChar = ch.GetCenterPoint() - camPos;
@@ -325,7 +341,7 @@ namespace PingMaker.Core
                 for (int i = 0; i < allChars.Count; i++)
                 {
                     Character ch = allChars[i];
-                    if (ch == null || ch == Player.m_localPlayer || ch.IsDead() || ch.gameObject == null) continue;
+                    if (!IsValidTargetCreature(ch)) continue;
 
                     Vector3 toChar = ch.GetCenterPoint() - camPos;
                     float dist = toChar.magnitude;

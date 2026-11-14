@@ -46,7 +46,7 @@ namespace PingMaker.UI
         {
             Instance = this;
             float w = 520f;
-            float h = 650f;
+            float h = 680f;
             m_windowRect = new Rect((Screen.width - w) * 0.5f, (Screen.height - h) * 0.5f, w, h);
         }
 
@@ -111,7 +111,7 @@ namespace PingMaker.UI
             m_isRebinding = false;
 
             float w = 520f;
-            float h = 650f;
+            float h = 680f;
             m_windowRect = new Rect((Screen.width - w) * 0.5f, (Screen.height - h) * 0.5f, w, h);
 
             ZCursor.LockState = CursorLockMode.None;
@@ -225,6 +225,7 @@ namespace PingMaker.UI
             ModConfig.ShowOffscreenArrow.Value = GUILayout.Toggle(ModConfig.ShowOffscreenArrow.Value, "  Отображать стрелку на краю экрана, если метка вне обзора", m_toggleStyle);
             ModConfig.SyncToMinimap.Value = GUILayout.Toggle(ModConfig.SyncToMinimap.Value, "  Дублировать пинг временной отметкой на миникарте", m_toggleStyle);
             ModConfig.ColorizeMapPlayers.Value = GUILayout.Toggle(ModConfig.ColorizeMapPlayers.Value, "  Окрашивать стрелки направления игроков на карте в их личный цвет", m_toggleStyle);
+            ModConfig.EnableRadialColorMenu.Value = GUILayout.Toggle(ModConfig.EnableRadialColorMenu.Value, "  Круговое радиальное меню цвета при удержании", m_toggleStyle);
 
             GUILayout.Space(6f);
 

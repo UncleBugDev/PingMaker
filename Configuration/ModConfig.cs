@@ -10,6 +10,7 @@ namespace PingMaker.Configuration
         public static ConfigEntry<KeyCode> AlternativePingKey = null!;
         public static ConfigEntry<KeyCode> SettingsKey = null!;
         public static ConfigEntry<float> HoldTimeForMenu = null!;
+        public static ConfigEntry<bool> EnableRadialColorMenu = null!;
 
         // Personal Color Settings
         public static ConfigEntry<int> ActiveColorIndex = null!;
@@ -45,8 +46,8 @@ namespace PingMaker.Configuration
             AlternativePingKey = config.Bind(
                 "1. Controls",
                 "AlternativePingKey",
-                KeyCode.G,
-                new ConfigDescription("Дополнительная клавиша для пинга (по умолчанию: G).")
+                KeyCode.None,
+                new ConfigDescription("Дополнительная клавиша для пинга (по умолчанию: None, чтобы избежать конфликтов).")
             );
 
             SettingsKey = config.Bind(
@@ -61,6 +62,13 @@ namespace PingMaker.Configuration
                 "HoldTimeForMenu",
                 0.20f,
                 new ConfigDescription("Время удержания клавиши (в секундах) для открытия радиального меню выбора личного цвета.", new AcceptableValueRange<float>(0.1f, 1.0f))
+            );
+
+            EnableRadialColorMenu = config.Bind(
+                "1. Controls",
+                "EnableRadialColorMenu",
+                false,
+                new ConfigDescription("Включать ли круговое меню выбора цвета при удержании клавиши пинга (по умолчанию выключено, чтобы избежать случайных смен цвета во время боя или эмоций; цвет настраивается через панель на клавишу ').")
             );
 
             // Personal Color

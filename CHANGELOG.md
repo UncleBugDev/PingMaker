@@ -2,6 +2,16 @@
 
 All notable changes to **PingMaker** will be documented in this file.
 
+## [1.2.0] - 2026-11-14
+- Added tactical lock-on reticle for creatures (circle + diagonal pointing arrow `↘ ⭕`) with 3 selectable operational modes.
+- Added laser designator 3D markers with soft pulsing laser haze bloom.
+- Removed opaque skull icon from creature pings, keeping creatures fully visible.
+- Added colored player overhead 3D nameplates and center crosshair hover names.
+- Added true-color procedural radar ping sprite for minimap (eliminating blue tint color distortion).
+- Excluded friendly players from creature lock-on targeting.
+- Disabled radial color menu on hold by default and unbound secondary G key to prevent accidental color changes.
+- Fixed `Character.GetHeadPoint()` crash on creatures without head bones (e.g. Greydwarf Shaman).
+
 ## [1.1.0] - 2026-11-12
 - Added Viking-themed in-game GUI with Valheim gold styling and rune ornaments.
 - Added custom colored player direction arrows on map and minimap (real-time heading tracking).

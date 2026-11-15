@@ -103,7 +103,7 @@ namespace PingMaker.Core
                     {
                         m_isHolding = true;
                         TargetLockonReticle.Instance?.SetTarget(null);
-                        Vector2 screenCenter = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
+                        Vector2 screenCenter = GetCrosshairScreenPoint();
                         RadialMenu.Instance?.Open(screenCenter);
                     }
                 }
@@ -172,6 +172,28 @@ namespace PingMaker.Core
             return false;
         }
 
+        /// <summary>
+        /// Возвращает точную экранную позицию перекрестия прицела игрока с учетом масштаба GUI и разрешения.
+        /// </summary>
+        public static Vector3 GetCrosshairScreenPoint()
+        {
+            if (Hud.instance != null && Hud.instance.m_crosshair != null && Hud.instance.m_crosshair.gameObject.activeInHierarchy)
+            {
+                return Hud.instance.m_crosshair.transform.position;
+            }
+            return new Vector3(Screen.width * 0.5f, Screen.height * 0.5f, 0f);
+        }
+
+        /// <summary>
+        /// Строит луч из камеры строго через точку перекрестия прицела на экране.
+        /// Гарантирует совпадение линии выстрела/метки с прицелом на любом разрешении и масштабе экрана.
+        /// </summary>
+        public static Ray GetAimRay(Camera cam)
+        {
+            Vector3 crosshairPos = GetCrosshairScreenPoint();
+            return cam.ScreenPointToRay(crosshairPos);
+        }
+
         private void ExecuteRaycastAndSend()
         {
             // Cooldown 0.25 сек для защиты от случайного спама
@@ -182,8 +204,9 @@ namespace PingMaker.Core
             if (cam == null) return;
 
             float maxDist = ModConfig.MaxPingDistance.Value;
+            Ray aimRay = GetAimRay(cam);
 
-            // 1. Приоритетный поиск цели-существа через 3-уровневый алгоритм
+            // 1. Приоритетный поиск цели-существа
             Character? targetChar = FindTargetCreature(cam, maxDist);
 
             Vector3 targetPoint;
@@ -203,9 +226,8 @@ namespace PingMaker.Core
             }
             else
             {
-                // 2. Стандартный луч в мир (земля, камень, постройка, дерево)
-                Ray ray = new Ray(cam.transform.position, cam.transform.forward);
-                if (Physics.Raycast(ray, out RaycastHit hit, maxDist, m_layerMask))
+                // 2. Стандартный луч в мир по линии прицела (земля, камень, постройка, дерево)
+                if (Physics.Raycast(aimRay, out RaycastHit hit, maxDist, m_layerMask))
                 {
                     if (Player.m_localPlayer != null && hit.collider.transform.root == Player.m_localPlayer.transform)
                     {
@@ -219,7 +241,7 @@ namespace PingMaker.Core
                 {
                     // Луч ушел в открытый горизонт/небо
                     category = PingCategory.World;
-                    targetPoint = cam.transform.position + cam.transform.forward * Mathf.Min(maxDist, 100f);
+                    targetPoint = aimRay.origin + aimRay.direction * Mathf.Min(maxDist, 100f);
                 }
             }
 
@@ -279,15 +301,51 @@ namespace PingMaker.Core
         }
 
         /// <summary>
-        /// 3-уровневый универсальный алгоритм захвата существ.
-        /// Не блокируется травой, кустами, листвой или мелкими триггерами.
+        /// Прецизионный алгоритм захвата существа точно в перекрестии прицела.
+        /// Исключает ложные "улеты" и захваты мобов сбоку или за стенами/преградами.
         /// </summary>
         public static Character? FindTargetCreature(Camera cam, float maxDistance)
         {
-            Vector3 camPos = cam.transform.position;
-            Vector3 camFwd = cam.transform.forward;
+            Ray aimRay = GetAimRay(cam);
+            Vector3 crosshairScreenPos = GetCrosshairScreenPoint();
 
-            // Уровень 1: Ванильный захват цели игрока на ближней дистанции (мгновенный отклик)
+            int fullMask = LayerMask.GetMask(
+                "Default",
+                "static_solid",
+                "Default_small",
+                "piece",
+                "piece_nonsolid",
+                "terrain",
+                "character",
+                "character_net",
+                "item",
+                "vehicle",
+                "Water"
+            );
+
+            // Уровень 1: Прямой луч через перекрестие (наивысший приоритет)
+            if (Physics.Raycast(aimRay, out RaycastHit directHit, maxDistance, fullMask))
+            {
+                if (Player.m_localPlayer == null || directHit.collider.transform.root != Player.m_localPlayer.transform)
+                {
+                    Character ch = directHit.collider.GetComponentInParent<Character>();
+                    if (ch == null && directHit.collider.attachedRigidbody != null)
+                    {
+                        ch = directHit.collider.attachedRigidbody.GetComponent<Character>();
+                    }
+
+                    if (IsValidTargetCreature(ch))
+                    {
+                        return ch;
+                    }
+
+                    // Если прямой луч попал в твердое препятствие (стена, скала, дерево, земля),
+                    // ограничиваем дальность, чтобы не захватывать мобов сквозь преграды!
+                    maxDistance = Mathf.Min(maxDistance, directHit.distance);
+                }
+            }
+
+            // Уровень 2: Ванильный захват цели игрока на ближней дистанции (мгновенный отклик)
             if (Player.m_localPlayer != null)
             {
                 Character hover = Player.m_localPlayer.GetHoverCreature();
@@ -297,66 +355,41 @@ namespace PingMaker.Core
                 }
             }
 
-            // Уровень 2: Объемный луч SphereCastAll (радиус 0.9м) ТОЛЬКО по слоям существ
-            // Игнорирует 100% травы, кустов, листвы и мелких триггеров
-            int charMask = LayerMask.GetMask("character", "character_net");
-            RaycastHit[] hits = Physics.SphereCastAll(camPos, 0.9f, camFwd, maxDistance, charMask);
-            if (hits != null && hits.Length > 0)
-            {
-                Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
-                int obstacleMask = LayerMask.GetMask("Default", "static_solid", "piece", "terrain");
-
-                foreach (RaycastHit hit in hits)
-                {
-                    if (hit.collider == null) continue;
-                    if (Player.m_localPlayer != null && hit.collider.transform.root == Player.m_localPlayer.transform) continue;
-
-                    Character ch = hit.collider.GetComponentInParent<Character>();
-                    if (ch == null && hit.collider.attachedRigidbody != null)
-                    {
-                        ch = hit.collider.attachedRigidbody.GetComponent<Character>();
-                    }
-
-                    if (IsValidTargetCreature(ch))
-                    {
-                        // Проверка прямой видимости: не скрыто ли существо за горой или каменной стеной
-                        Vector3 toChar = ch.GetCenterPoint() - camPos;
-                        if (!Physics.Raycast(camPos, toChar.normalized, out _, toChar.magnitude - 0.2f, obstacleMask))
-                        {
-                            return ch;
-                        }
-                    }
-                }
-            }
-
-            // Уровень 3: Конусный поиск среди Character.GetAllCharacters()
-            // Гарантированно ловит быстрых кабанов, оленей в высокой траве и птиц
+            // Уровень 3: Прецизионный поиск существа вблизи центра перекрестия на экране (в радиусе 38 пикселей)
+            // Надежно подхватывает цель при небольшом опережении или быстром движении зверя
             List<Character> allChars = Character.GetAllCharacters();
+            if (allChars == null || allChars.Count == 0) return null;
+
+            int obstacleMask = LayerMask.GetMask("Default", "static_solid", "piece", "terrain");
             Character? bestCandidate = null;
-            float bestAngle = 4.0f; // Конус 4 градуса вокруг перекрестия
+            float bestScreenDistance = 38f; // Строгий радиус захвата вокруг перекрестия на экране
 
-            if (allChars != null)
+            for (int i = 0; i < allChars.Count; i++)
             {
-                int obstacleMask = LayerMask.GetMask("Default", "static_solid", "piece", "terrain");
-                for (int i = 0; i < allChars.Count; i++)
+                Character ch = allChars[i];
+                if (!IsValidTargetCreature(ch)) continue;
+
+                Vector3 charCenter = ch.GetCenterPoint();
+                Vector3 screenPoint = cam.WorldToScreenPoint(charCenter);
+
+                // Существо должно находиться перед камерой и ближе ближайшего препятствия
+                if (screenPoint.z <= 0.2f || screenPoint.z > maxDistance) continue;
+
+                float distToCrosshair = Vector2.Distance(
+                    new Vector2(screenPoint.x, screenPoint.y),
+                    new Vector2(crosshairScreenPos.x, crosshairScreenPos.y)
+                );
+
+                if (distToCrosshair < bestScreenDistance)
                 {
-                    Character ch = allChars[i];
-                    if (!IsValidTargetCreature(ch)) continue;
+                    // Проверка прямой видимости (нет ли скалы/стены между камерой и существом)
+                    Vector3 toChar = charCenter - aimRay.origin;
+                    float worldDist = toChar.magnitude;
 
-                    Vector3 toChar = ch.GetCenterPoint() - camPos;
-                    float dist = toChar.magnitude;
-                    if (dist > maxDistance || dist < 0.5f) continue;
-
-                    float angle = Vector3.Angle(camFwd, toChar);
-                    float maxAllowedAngle = Mathf.Clamp(16.0f / Mathf.Max(2.0f, dist * 0.2f), 1.2f, 4.0f);
-
-                    if (angle < maxAllowedAngle && angle < bestAngle)
+                    if (!Physics.Raycast(aimRay.origin, toChar.normalized, out _, worldDist - 0.2f, obstacleMask))
                     {
-                        if (!Physics.Raycast(camPos, toChar.normalized, out _, dist - 0.2f, obstacleMask))
-                        {
-                            bestCandidate = ch;
-                            bestAngle = angle;
-                        }
+                        bestCandidate = ch;
+                        bestScreenDistance = distToCrosshair;
                     }
                 }
             }

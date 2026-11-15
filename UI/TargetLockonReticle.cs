@@ -50,6 +50,8 @@ namespace PingMaker.UI
         {
             m_rect = gameObject.AddComponent<RectTransform>();
             m_rect.sizeDelta = new Vector2(120f, 120f);
+            m_rect.anchorMin = new Vector2(0.5f, 0.5f);
+            m_rect.anchorMax = new Vector2(0.5f, 0.5f);
             m_rect.pivot = new Vector2(0.5f, 0.5f);
 
             m_canvasGroup = gameObject.AddComponent<CanvasGroup>();
@@ -161,7 +163,23 @@ namespace PingMaker.UI
                 return;
             }
 
-            m_rect.position = new Vector2(screenPos.x, screenPos.y);
+            // Математически точная привязка к Canvas с учетом любого разрешения, DPI и CanvasScaler
+            if (PingManagerUI.Instance != null)
+            {
+                RectTransform parentCanvasRect = PingManagerUI.Instance.CanvasRect;
+                if (RectTransformUtility.ScreenPointToLocalPointInRectangle(parentCanvasRect, screenPos, null, out Vector2 localPoint))
+                {
+                    m_rect.anchoredPosition = localPoint;
+                }
+                else
+                {
+                    m_rect.position = new Vector2(screenPos.x, screenPos.y);
+                }
+            }
+            else
+            {
+                m_rect.position = new Vector2(screenPos.x, screenPos.y);
+            }
 
             // Окрашивание в активный личный цвет игрока
             Color personalColor = PlayerColors.GetActiveColor();

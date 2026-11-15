@@ -2,6 +2,7 @@ using System;
 using PingMaker.Configuration;
 using PingMaker.Core;
 using PingMaker.Network;
+using PingMaker.UI;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -81,6 +82,8 @@ namespace PingMaker.Visuals
         {
             m_rect = gameObject.AddComponent<RectTransform>();
             m_rect.sizeDelta = new Vector2(100f, 100f);
+            m_rect.anchorMin = new Vector2(0.5f, 0.5f);
+            m_rect.anchorMax = new Vector2(0.5f, 0.5f);
             m_rect.pivot = new Vector2(0.5f, 0.5f);
 
             m_canvasGroup = gameObject.AddComponent<CanvasGroup>();
@@ -320,8 +323,8 @@ namespace PingMaker.Visuals
                 screenPos.y = -screenPos.y;
             }
 
-            float screenW = Screen.width;
-            float screenH = Screen.height;
+            float screenW = cam.pixelWidth > 0 ? cam.pixelWidth : Screen.width;
+            float screenH = cam.pixelHeight > 0 ? cam.pixelHeight : Screen.height;
             float margin = 50f * ModConfig.MarkerScale.Value;
 
             bool isOffscreen = isBehind ||
@@ -378,7 +381,23 @@ namespace PingMaker.Visuals
                 if (m_titleText != null) m_titleText.gameObject.SetActive(true);
             }
 
-            m_rect.position = clampedPos;
+            // Математически точная привязка к Canvas с учетом любого разрешения, DPI и CanvasScaler
+            if (PingManagerUI.Instance != null)
+            {
+                RectTransform parentCanvasRect = PingManagerUI.Instance.CanvasRect;
+                if (RectTransformUtility.ScreenPointToLocalPointInRectangle(parentCanvasRect, clampedPos, null, out Vector2 localPoint))
+                {
+                    m_rect.anchoredPosition = localPoint;
+                }
+                else
+                {
+                    m_rect.position = clampedPos;
+                }
+            }
+            else
+            {
+                m_rect.position = clampedPos;
+            }
 
             // Subtle pulsing scale for laser point & haze
             float pulse = 1.0f + 0.07f * Mathf.Sin(Time.time * 5.0f);

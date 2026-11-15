@@ -63,6 +63,9 @@ namespace PingMaker.UI
 
             RectTransform rootRect = m_menuRoot.GetComponent<RectTransform>();
             rootRect.sizeDelta = new Vector2(400f, 400f);
+            rootRect.anchorMin = new Vector2(0.5f, 0.5f);
+            rootRect.anchorMax = new Vector2(0.5f, 0.5f);
+            rootRect.pivot = new Vector2(0.5f, 0.5f);
             rootRect.anchoredPosition = Vector2.zero;
 
             m_canvasGroup = m_menuRoot.GetComponent<CanvasGroup>();
@@ -188,7 +191,22 @@ namespace PingMaker.UI
             m_hoveredIndex = ModConfig.ActiveColorIndex.Value;
 
             RectTransform rootRect = m_menuRoot.GetComponent<RectTransform>();
-            rootRect.position = screenCenter;
+            if (PingManagerUI.Instance != null)
+            {
+                RectTransform parentRect = PingManagerUI.Instance.CanvasRect;
+                if (RectTransformUtility.ScreenPointToLocalPointInRectangle(parentRect, screenCenter, null, out Vector2 localPoint))
+                {
+                    rootRect.anchoredPosition = localPoint;
+                }
+                else
+                {
+                    rootRect.position = screenCenter;
+                }
+            }
+            else
+            {
+                rootRect.position = screenCenter;
+            }
 
             // Update player name in center
             if (Player.m_localPlayer != null)

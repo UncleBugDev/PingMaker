@@ -29,11 +29,15 @@ A modern, highly customizable 3D world ping, tactical targeting, and multiplayer
   - Player pins on the minimap and large world map rotate in real-time according to their view/movement direction and glow in each player's personal color.
 - **True-Color Minimap Radar Pings**:
   - Custom pure white procedural radar ping sprite eliminates the game's default cyan texture color-blending bug — pink stays vibrant pink, yellow stays bright yellow, and orange stays orange.
-- **Viking-Themed In-Game GUI (Key: `'` / Russian `э`)**:
+- **Viking-Themed In-Game GUI & Native ESC Menu Button**:
+  - Openable at any time by pressing `'` (Quote / Russian `э`) OR by clicking the new native **`"ᚱ PingMaker"`** button in the in-game ESC (Pause) menu!
   - Authentic Nordic oak plaque styling with Valheim gold borders, runic banners, and native game font.
   - Interactive one-click key rebinding supporting keyboard and mouse buttons (e.g. `Mouse 4`, `Mouse 3`, etc.).
   - Instant personal color picker with live preview.
   - Automatic mouse cursor release (no need to open `Esc` menu first).
+- **Pixel-Perfect Screen Scaling & Crosshair Aiming**:
+  - Full support for all resolutions (1080p, 1440p, 4K, 720p), ultrawide monitors (21:9, 32:9), 16:10 aspect ratios, and custom Valheim GUI scales.
+  - Pings and lock-on reticles calculate with mathematical precision through the exact center of the player's crosshair, preventing off-screen drift and incorrect target snapping.
 - **Accidental Switch Prevention**:
   - `AlternativePingKey` default set to `None` to prevent conflicts with vanilla emote keys (`T` / `G`).
   - Radial menu on hold is disabled by default (can be toggled on in settings), eliminating accidental color switches during battle.
@@ -47,7 +51,7 @@ A modern, highly customizable 3D world ping, tactical targeting, and multiplayer
 | Action | Default Input | Description |
 | :--- | :--- | :--- |
 | **Quick Ping** | `Mouse 4` (or rebindable in GUI) | Places a 3D laser ping at crosshair or locks onto a targeted creature |
-| **Open Settings GUI** | `'` (Quote / Russian `э`) | Opens the authentic Viking GUI to pick colors, rebind keys, and adjust styles |
+| **Open Settings GUI** | `'` (Quote / Russian `э`) or **ESC Menu** | Opens the authentic Viking GUI to pick colors, rebind keys, and adjust styles (also via `"ᚱ PingMaker"` button in ESC menu) |
 | **Close Settings GUI** | `Esc` or `'` | Closes and immediately persists all changes |
 
 *Keys can be re-bound dynamically in-game via the Settings GUI or in `BepInEx/config/com.author.pingmaker.cfg`.*

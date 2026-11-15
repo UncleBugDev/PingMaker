@@ -2,6 +2,15 @@
 
 All notable changes to **PingMaker** will be documented in this file.
 
+## [1.2.1] - 2026-11-15
+- **Fixed Crosshair Aiming & Resolution Scaling**:
+  - Implemented exact screen-space crosshair raycasting (`cam.ScreenPointToRay(crosshairPos)`), ensuring pings land precisely where the player's crosshair points regardless of display resolution, aspect ratio (16:9, 16:10, 21:9 Ultrawide, 32:9 Super-Ultrawide), or Valheim GUI scaling settings.
+  - Replaced raw screen pixel positioning with `RectTransformUtility.ScreenPointToLocalPointInRectangle` on the UI canvas, eliminating reticle and 3D marker drift/offset on 1440p, 4K, 720p, and custom DPI screens.
+  - Fixed creature lock-on jumping/snapping to distant off-screen or off-crosshair creatures: direct raycast has top priority, and proximity search is strictly bounded to a 38-pixel screen radius with full line-of-sight verification (preventing targeting through rocks, trees, or walls).
+- **Added Native ESC (Pause) Menu Button**:
+  - Added a styled `"ᚱ PingMaker"` button directly inside the Valheim pause/ESC menu next to the "Settings" button. Players can now open PingMaker configuration seamlessly both via the ESC menu and by pressing `'` / `э`.
+  - Automatically matches native Valheim button textures, hover animations, click sounds, and vertical layout grouping.
+
 ## [1.2.0] - 2026-11-14
 - Added tactical lock-on reticle for creatures (circle + diagonal pointing arrow `↘ ⭕`) with 3 selectable operational modes.
 - Added laser designator 3D markers with soft pulsing laser haze bloom.

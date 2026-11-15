@@ -14,6 +14,7 @@ namespace PingMaker.UI
     public class PingManagerUI : MonoBehaviour
     {
         public static PingManagerUI? Instance { get; private set; }
+        public RectTransform CanvasRect => (RectTransform)transform;
 
         private Canvas m_canvas = null!;
         private CanvasScaler m_scaler = null!;

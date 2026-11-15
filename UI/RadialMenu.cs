@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using PingMaker.Configuration;
 using PingMaker.Core;
+using PingMaker.Network;
+using PingMaker.Visuals;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -18,6 +20,7 @@ namespace PingMaker.UI
 
         private bool m_isOpen;
         private Vector2 m_centerPos;
+        private Vector2 m_openMousePos;
         private int m_hoveredIndex = -1;
 
         private GameObject m_menuRoot = null!;
@@ -188,6 +191,7 @@ namespace PingMaker.UI
         {
             m_isOpen = true;
             m_centerPos = screenCenter;
+            m_openMousePos = Input.mousePosition;
             m_hoveredIndex = ModConfig.ActiveColorIndex.Value;
 
             RectTransform rootRect = m_menuRoot.GetComponent<RectTransform>();
@@ -235,23 +239,34 @@ namespace PingMaker.UI
             if (m_hoveredIndex >= 0 && m_hoveredIndex < m_sectors.Count)
             {
                 PlayerColorDefinition chosen = m_sectors[m_hoveredIndex].Definition;
-                ModConfig.ActiveColorIndex.Value = chosen.Id;
-                ModConfig.CustomPlayerColor.Value = chosen.Color;
-
-                // Сохраняем в файл конфигурации
-                PingMakerPlugin.Instance.Config.Save();
-
-                // Оповещение в игре
-                if (Player.m_localPlayer != null)
+                if (ModConfig.ActiveColorIndex.Value != chosen.Id)
                 {
-                    string hexColor = ColorUtility.ToHtmlStringRGB(chosen.Color);
-                    Player.m_localPlayer.Message(
-                        MessageHud.MessageType.TopLeft,
-                        $"<color=#{hexColor}>[PingMaker]</color> Ваш личный цвет пинга: <color=#{hexColor}><b>{chosen.Name}</b></color>"
-                    );
-                }
+                    ModConfig.ActiveColorIndex.Value = chosen.Id;
+                    ModConfig.CustomPlayerColor.Value = chosen.Color;
 
-                PingMakerPlugin.Log.LogInfo($"[PingMaker] Выбран личный цвет: {chosen.Name} ({chosen.Color})");
+                    // Сохраняем в файл конфигурации
+                    ModConfig.Save();
+
+                    // Сетевая синхронизация с пирами
+                    NetworkSync.BroadcastLocalPlayerColor();
+
+                    if (Minimap.instance != null)
+                    {
+                        PlayerMapTracker.UpdateLocalPlayer(Minimap.instance);
+                    }
+
+                    // Оповещение в игре
+                    if (Player.m_localPlayer != null)
+                    {
+                        string hexColor = ColorUtility.ToHtmlStringRGB(chosen.Color);
+                        Player.m_localPlayer.Message(
+                            MessageHud.MessageType.TopLeft,
+                            $"<color=#{hexColor}>[PingMaker]</color> Ваш личный цвет пинга: <color=#{hexColor}><b>{chosen.Name}</b></color>"
+                        );
+                    }
+
+                    PingMakerPlugin.Log.LogInfo($"[PingMaker] Выбран личный цвет через колесо: {chosen.Name} ({chosen.Color})");
+                }
             }
 
             Hide();
@@ -277,11 +292,14 @@ namespace PingMaker.UI
             if (!m_isOpen) return;
 
             Vector2 mousePos = Input.mousePosition;
-            Vector2 delta = mousePos - m_centerPos;
+            Vector2 deltaFromOpen = mousePos - m_openMousePos;
+            Vector2 deltaFromCenter = mousePos - m_centerPos;
 
-            if (delta.magnitude > 22f)
+            // Игрок должен явно сместить мышь как минимум на 32px от точки открытия
+            // Это исключает случайное переключение цвета при микро-движении мыши
+            if (deltaFromOpen.magnitude > 32f && deltaFromCenter.magnitude > 22f)
             {
-                float angle = Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg;
+                float angle = Mathf.Atan2(deltaFromCenter.y, deltaFromCenter.x) * Mathf.Rad2Deg;
                 float clockwise = (90f - angle + 360f) % 360f;
                 float step = 360f / m_sectors.Count;
 

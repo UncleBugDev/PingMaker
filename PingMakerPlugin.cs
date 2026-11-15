@@ -15,7 +15,7 @@ namespace PingMaker
     {
         public const string ModGUID = "com.author.pingmaker";
         public const string ModName = "PingMaker";
-        public const string ModVersion = "1.2.2";
+        public const string ModVersion = "1.2.3";
 
         public static PingMakerPlugin Instance { get; private set; } = null!;
         public static ManualLogSource Log => Instance.Logger;
@@ -81,6 +81,31 @@ namespace PingMaker
             private static void Prefix()
             {
                 NetworkSync.Reset();
+            }
+        }
+
+        [HarmonyPatch(typeof(Player), nameof(Player.OnSpawned))]
+        private static class PlayerOnSpawnedPatch
+        {
+            private static void Postfix(Player __instance)
+            {
+                if (__instance == Player.m_localPlayer)
+                {
+                    NetworkSync.BroadcastLocalPlayerColor();
+                    NetworkSync.RequestAllPlayerColors();
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(ZNet), "RPC_PeerInfo")]
+        private static class ZNetPeerInfoPatch
+        {
+            private static void Postfix()
+            {
+                if (Player.m_localPlayer != null)
+                {
+                    NetworkSync.BroadcastLocalPlayerColor();
+                }
             }
         }
 

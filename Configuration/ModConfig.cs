@@ -85,6 +85,15 @@ namespace PingMaker.Configuration
                 new ConfigDescription("Индекс выбранного личного цвета игрока в палитре (0=Жёлтый, 1=Оранжевый, 2=Красный, 3=Розовый, 4=Фиолетовый, 5=Синий, 6=Голубой, 7=Лайм).", new AcceptableValueRange<int>(0, 7))
             );
 
+            ActiveColorIndex.SettingChanged += (sender, args) =>
+            {
+                if (ActiveColorIndex.Value >= 0 && ActiveColorIndex.Value < PlayerColors.Palette.Length)
+                {
+                    CustomPlayerColor.Value = PlayerColors.Palette[ActiveColorIndex.Value].Color;
+                }
+                Network.NetworkSync.BroadcastLocalPlayerColor();
+            };
+
             CustomPlayerColor = config.Bind(
                 "2. Personal Color",
                 "CustomPlayerColor",

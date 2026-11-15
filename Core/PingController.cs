@@ -19,6 +19,7 @@ namespace PingMaker.Core
         private float m_pressStartTime = -1f;
         private bool m_isHolding;
         private float m_lastPingTime;
+        private float m_lastPeriodicSyncTime;
         private int m_layerMask;
 
         public bool IsSuppressingAltAttack => (m_pressStartTime > 0f || m_isHolding) &&
@@ -59,6 +60,13 @@ namespace PingMaker.Core
                 CancelMenu();
                 TargetLockonReticle.Instance?.SetTarget(null);
                 return;
+            }
+
+            // Периодическая фоновая проверка и синхронизация цветов в мультиплеере (раз в 6 секунд)
+            if (Time.time - m_lastPeriodicSyncTime > 6.0f)
+            {
+                m_lastPeriodicSyncTime = Time.time;
+                NetworkSync.PeriodicSync();
             }
 
             // Блокировка ввода, если открыт чат, консоль, инвентарь или большая карта

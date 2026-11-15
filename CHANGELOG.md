@@ -2,6 +2,20 @@
 
 All notable changes to **PingMaker** will be documented in this file.
 
+## [1.2.3] - 2026-11-15
+- **Multiplayer Player Color Sync & Cache Poisoning Overhaul**:
+  - Replaced non-deterministic `string.GetHashCode()` fallback (which had randomized hash seeds per process in .NET Core, causing different players to see different random colors for the same teammate) with a deterministic cross-platform **FNV-1a hash algorithm**.
+  - Fixed fallback cache poisoning: unverified default colors are no longer permanently written to `PlayerColorsMap`, allowing remote players' actual colors to seamlessly apply as soon as their ZDO or RPC packet arrives.
+  - Added automatic ZDO inspection via `ZNet.GetPlayerList()` and `ZDOMan` to retrieve players' colors across the entire map, even when players are outside local GameObject loading distance.
+  - Added automatic broadcast on local player spawn and respawn via `Player.OnSpawned`, and whenever a new peer connects via `ZNet.RPC_PeerInfo`.
+  - Added background periodic heartbeat (every 6 seconds) to ensure ZDO data integrity and request missing colors from connected peers.
+  - Added automatic color synchronization upon changing `ActiveColorIndex` via BepInEx config manager (`SettingChanged`).
+- **Radial Menu Accidental Switch Fix**:
+  - Added minimum cursor displacement guard (32px from opening position) to prevent accidental color switching on slight mouse shifts or crosshair offsets.
+  - Linked radial menu confirmation directly to `NetworkSync.BroadcastLocalPlayerColor()` and `ModConfig.Save()`.
+- **New Official Meme Icon**:
+  - Updated mod icon with high-visibility 256x256 meme artwork: Viking Soyjaks pointing at a laser designator red dot ping on a Valheim rock with red Paint circles and arrows.
+
 ## [1.2.2] - 2026-11-15
 - **Procedural Sound Engine & Audio Presets**:
   - Added a lightweight procedural audio engine with real-time in-memory `AudioClip` synthesis (zero external audio assets required, preventing missing file errors and keeping mod footprint minimal).

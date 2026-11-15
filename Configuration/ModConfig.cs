@@ -57,6 +57,13 @@ namespace PingMaker.Configuration
                 new ConfigDescription("Дополнительная клавиша для пинга (по умолчанию: None, чтобы избежать конфликтов).")
             );
 
+            // Автоматическая очистка старых конфигов пользователей, где сохранилась клавиша G или T (конфликт с эмоциями)
+            if (AlternativePingKey.Value == KeyCode.G || AlternativePingKey.Value == KeyCode.T)
+            {
+                AlternativePingKey.Value = KeyCode.None;
+                config.Save();
+            }
+
             SettingsKey = config.Bind(
                 "1. Controls",
                 "SettingsKey",

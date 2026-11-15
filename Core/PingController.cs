@@ -162,21 +162,24 @@ namespace PingMaker.Core
         private bool IsPingKeyDown()
         {
             if (Input.GetKeyDown(ModConfig.PingKey.Value)) return true;
-            if (ModConfig.AlternativePingKey.Value != KeyCode.None && Input.GetKeyDown(ModConfig.AlternativePingKey.Value)) return true;
+            KeyCode alt = ModConfig.AlternativePingKey.Value;
+            if (alt != KeyCode.None && alt != KeyCode.G && alt != KeyCode.T && Input.GetKeyDown(alt)) return true;
             return false;
         }
 
         private bool IsPingKeyStay()
         {
             if (Input.GetKey(ModConfig.PingKey.Value)) return true;
-            if (ModConfig.AlternativePingKey.Value != KeyCode.None && Input.GetKey(ModConfig.AlternativePingKey.Value)) return true;
+            KeyCode alt = ModConfig.AlternativePingKey.Value;
+            if (alt != KeyCode.None && alt != KeyCode.G && alt != KeyCode.T && Input.GetKey(alt)) return true;
             return false;
         }
 
         private bool IsPingKeyUp()
         {
             if (Input.GetKeyUp(ModConfig.PingKey.Value)) return true;
-            if (ModConfig.AlternativePingKey.Value != KeyCode.None && Input.GetKeyUp(ModConfig.AlternativePingKey.Value)) return true;
+            KeyCode alt = ModConfig.AlternativePingKey.Value;
+            if (alt != KeyCode.None && alt != KeyCode.G && alt != KeyCode.T && Input.GetKeyUp(alt)) return true;
             return false;
         }
 

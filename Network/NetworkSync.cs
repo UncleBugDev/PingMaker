@@ -11,6 +11,7 @@ namespace PingMaker.Network
     {
         public const string RPC_PING_NAME = "PingMaker_WorldPing";
         public const string RPC_SYNC_COLOR = "PingMaker_SyncColor";
+        public const string RPC_SYNC_HEX = "PingMaker_SyncHex";
         public const string RPC_REQUEST_COLORS = "PingMaker_RequestColors";
 
         private static bool s_isRegistered;
@@ -33,9 +34,10 @@ namespace PingMaker.Network
             {
                 ZRoutedRpc.instance.Register<ZPackage>(RPC_PING_NAME, RPC_PingMaker_WorldPing);
                 ZRoutedRpc.instance.Register<string, int>(RPC_SYNC_COLOR, RPC_PingMaker_SyncColor);
+                ZRoutedRpc.instance.Register<string, string>(RPC_SYNC_HEX, RPC_PingMaker_SyncHex);
                 ZRoutedRpc.instance.Register(RPC_REQUEST_COLORS, RPC_PingMaker_RequestColors);
                 s_isRegistered = true;
-                PingMakerPlugin.Log.LogInfo($"[PingMaker] Сетевые RPC зарегистрированы ({RPC_PING_NAME}, {RPC_SYNC_COLOR}, {RPC_REQUEST_COLORS}).");
+                PingMakerPlugin.Log.LogInfo($"[PingMaker] Сетевые RPC зарегистрированы ({RPC_PING_NAME}, {RPC_SYNC_COLOR}, {RPC_SYNC_HEX}, {RPC_REQUEST_COLORS}).");
 
                 if (Player.m_localPlayer != null)
                 {
@@ -70,7 +72,8 @@ namespace PingMaker.Network
             if (string.IsNullOrEmpty(localName)) return;
 
             int colorIdx = ModConfig.ActiveColorIndex.Value;
-            Color chosenColor = PlayerColors.GetColorById(colorIdx).Color;
+            Color chosenColor = PlayerColors.GetActiveColor();
+            string hex = ColorUtility.ToHtmlStringRGB(chosenColor);
             PlayerColorsMap[localName] = chosenColor;
 
             try
@@ -79,6 +82,7 @@ namespace PingMaker.Network
                 if (zdo != null)
                 {
                     zdo.Set("PingMaker_Color", colorIdx);
+                    zdo.Set("PingMaker_ColorHex", hex);
                 }
             }
             catch { }
@@ -86,6 +90,7 @@ namespace PingMaker.Network
             if (ZRoutedRpc.instance != null)
             {
                 ZRoutedRpc.instance.InvokeRoutedRPC(ZRoutedRpc.Everybody, RPC_SYNC_COLOR, localName, colorIdx);
+                ZRoutedRpc.instance.InvokeRoutedRPC(ZRoutedRpc.Everybody, RPC_SYNC_HEX, localName, hex);
             }
 
             if (Minimap.instance != null)
@@ -103,7 +108,53 @@ namespace PingMaker.Network
         }
 
         /// <summary>
-        /// Периодическая проверка и синхронизация цветов (вызывается раз в ~6-8 секунд).
+        /// Проверяет, занят ли данный цвет (или близкий визуально оттенок) другим активным игроком на сервере.
+        /// </summary>
+        public static bool IsColorTakenByOtherPlayer(Color testColor, int testPresetIdx, out string takenByName)
+        {
+            takenByName = "";
+            string localName = Player.m_localPlayer != null ? Player.m_localPlayer.GetPlayerName() : "";
+
+            if (ZNet.instance != null)
+            {
+                List<ZNet.PlayerInfo> playerList = ZNet.instance.GetPlayerList();
+                if (playerList != null)
+                {
+                    for (int i = 0; i < playerList.Count; i++)
+                    {
+                        string otherName = playerList[i].m_name;
+                        if (string.IsNullOrEmpty(otherName) || string.Equals(otherName, localName, StringComparison.OrdinalIgnoreCase))
+                            continue;
+
+                        // Если у другого игрока уже зафиксирован цвет
+                        Color otherColor = GetPlayerColor(otherName);
+
+                        if (AreColorsTooSimilar(testColor, otherColor))
+                        {
+                            takenByName = otherName;
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Сравнение цветов на визуальное сходство в пространстве RGB.
+        /// </summary>
+        public static bool AreColorsTooSimilar(Color a, Color b)
+        {
+            float dr = a.r - b.r;
+            float dg = a.g - b.g;
+            float db = a.b - b.b;
+            float distSq = (dr * dr + dg * dg + db * db);
+            return distSq < 0.035f; // Порог визуальной неразличимости на экране
+        }
+
+        /// <summary>
+        /// Периодическая проверка и синхронизация цветов (вызывается раз в ~6 секунд).
         /// Гарантирует целостность ZDO локального игрока и подтягивание цветов всех присутствующих на сервере.
         /// </summary>
         public static void PeriodicSync()
@@ -117,9 +168,14 @@ namespace PingMaker.Network
                 if (localZdo != null)
                 {
                     int currentZdoColor = localZdo.GetInt("PingMaker_Color", -1);
-                    if (currentZdoColor != ModConfig.ActiveColorIndex.Value)
+                    string currentHex = localZdo.GetString("PingMaker_ColorHex", "");
+                    Color activeColor = PlayerColors.GetActiveColor();
+                    string activeHex = ColorUtility.ToHtmlStringRGB(activeColor);
+
+                    if (currentZdoColor != ModConfig.ActiveColorIndex.Value || currentHex != activeHex)
                     {
                         localZdo.Set("PingMaker_Color", ModConfig.ActiveColorIndex.Value);
+                        localZdo.Set("PingMaker_ColorHex", activeHex);
                         BroadcastLocalPlayerColor();
                     }
                 }
@@ -141,6 +197,13 @@ namespace PingMaker.Network
                                 ZDO? remoteZdo = ZDOMan.instance.GetZDO(playerList[i].m_characterID);
                                 if (remoteZdo != null)
                                 {
+                                    string hex = remoteZdo.GetString("PingMaker_ColorHex", "");
+                                    if (!string.IsNullOrEmpty(hex) && ColorUtility.TryParseHtmlString("#" + hex.TrimStart('#'), out Color parsed))
+                                    {
+                                        PlayerColorsMap[pName] = parsed;
+                                        continue;
+                                    }
+
                                     int c = remoteZdo.GetInt("PingMaker_Color", -1);
                                     if (c >= 0 && c < PlayerColors.Palette.Length)
                                     {
@@ -197,6 +260,13 @@ namespace PingMaker.Network
                             ZDO? zdo = ZDOMan.instance.GetZDO(playerList[i].m_characterID);
                             if (zdo != null)
                             {
+                                string hex = zdo.GetString("PingMaker_ColorHex", "");
+                                if (!string.IsNullOrEmpty(hex) && ColorUtility.TryParseHtmlString("#" + hex.TrimStart('#'), out Color parsed))
+                                {
+                                    PlayerColorsMap[playerName] = parsed;
+                                    return parsed;
+                                }
+
                                 int c = zdo.GetInt("PingMaker_Color", -1);
                                 if (c >= 0 && c < PlayerColors.Palette.Length)
                                 {
@@ -219,12 +289,23 @@ namespace PingMaker.Network
                     Player p = all[i];
                     if (p != null && string.Equals(p.GetPlayerName(), playerName, StringComparison.OrdinalIgnoreCase))
                     {
-                        int c = p.GetComponent<ZNetView>()?.GetZDO()?.GetInt("PingMaker_Color", -1) ?? -1;
-                        if (c >= 0 && c < PlayerColors.Palette.Length)
+                        ZDO? zdo = p.GetComponent<ZNetView>()?.GetZDO();
+                        if (zdo != null)
                         {
-                            Color found = PlayerColors.Palette[c].Color;
-                            PlayerColorsMap[playerName] = found;
-                            return found;
+                            string hex = zdo.GetString("PingMaker_ColorHex", "");
+                            if (!string.IsNullOrEmpty(hex) && ColorUtility.TryParseHtmlString("#" + hex.TrimStart('#'), out Color parsed))
+                            {
+                                PlayerColorsMap[playerName] = parsed;
+                                return parsed;
+                            }
+
+                            int c = zdo.GetInt("PingMaker_Color", -1);
+                            if (c >= 0 && c < PlayerColors.Palette.Length)
+                            {
+                                Color found = PlayerColors.Palette[c].Color;
+                                PlayerColorsMap[playerName] = found;
+                                return found;
+                            }
                         }
                     }
                 }
@@ -276,12 +357,29 @@ namespace PingMaker.Network
         private static void RPC_PingMaker_SyncColor(long sender, string playerName, int colorIndex)
         {
             if (string.IsNullOrEmpty(playerName)) return;
-            Color color = PlayerColors.GetColorById(colorIndex).Color;
-            PlayerColorsMap[playerName] = color;
-
-            if (Minimap.instance != null)
+            if (colorIndex >= 0 && colorIndex < PlayerColors.Palette.Length)
             {
-                PlayerMapTracker.UpdateMinimap(Minimap.instance);
+                Color color = PlayerColors.GetColorById(colorIndex).Color;
+                PlayerColorsMap[playerName] = color;
+
+                if (Minimap.instance != null)
+                {
+                    PlayerMapTracker.UpdateMinimap(Minimap.instance);
+                }
+            }
+        }
+
+        private static void RPC_PingMaker_SyncHex(long sender, string playerName, string hexColor)
+        {
+            if (string.IsNullOrEmpty(playerName) || string.IsNullOrEmpty(hexColor)) return;
+            if (ColorUtility.TryParseHtmlString("#" + hexColor.TrimStart('#'), out Color parsed))
+            {
+                PlayerColorsMap[playerName] = parsed;
+
+                if (Minimap.instance != null)
+                {
+                    PlayerMapTracker.UpdateMinimap(Minimap.instance);
+                }
             }
         }
 
@@ -289,7 +387,11 @@ namespace PingMaker.Network
         {
             if (Player.m_localPlayer != null && ZRoutedRpc.instance != null)
             {
-                ZRoutedRpc.instance.InvokeRoutedRPC(sender, RPC_SYNC_COLOR, Player.m_localPlayer.GetPlayerName(), ModConfig.ActiveColorIndex.Value);
+                string localName = Player.m_localPlayer.GetPlayerName();
+                Color localColor = PlayerColors.GetActiveColor();
+                string hex = ColorUtility.ToHtmlStringRGB(localColor);
+                ZRoutedRpc.instance.InvokeRoutedRPC(sender, RPC_SYNC_COLOR, localName, ModConfig.ActiveColorIndex.Value);
+                ZRoutedRpc.instance.InvokeRoutedRPC(sender, RPC_SYNC_HEX, localName, hex);
             }
         }
 

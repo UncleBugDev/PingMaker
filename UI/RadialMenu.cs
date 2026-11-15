@@ -241,8 +241,26 @@ namespace PingMaker.UI
                 PlayerColorDefinition chosen = m_sectors[m_hoveredIndex].Definition;
                 if (ModConfig.ActiveColorIndex.Value != chosen.Id)
                 {
+                    // Проверка на дублирование цвета с другим игроком
+                    if (NetworkSync.IsColorTakenByOtherPlayer(chosen.Color, chosen.Id, out string takenByName))
+                    {
+                        if (Player.m_localPlayer != null)
+                        {
+                            Player.m_localPlayer.Message(
+                                MessageHud.MessageType.Center,
+                                $"<color=#FF5555>К сожалению, цвет {chosen.Name} уже занят игроком {takenByName}!</color>\nВыберите другой цвет."
+                            );
+                        }
+                        Hide();
+                        return;
+                    }
+
                     ModConfig.ActiveColorIndex.Value = chosen.Id;
                     ModConfig.CustomPlayerColor.Value = chosen.Color;
+                    if (ModConfig.CustomColorHex != null)
+                    {
+                        ModConfig.CustomColorHex.Value = ColorUtility.ToHtmlStringRGB(chosen.Color);
+                    }
 
                     // Сохраняем в файл конфигурации
                     ModConfig.Save();

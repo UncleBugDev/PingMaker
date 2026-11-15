@@ -44,6 +44,11 @@ namespace PingMaker.Configuration
             {
                 return Palette[id];
             }
+            if (id == -1)
+            {
+                Color customCol = ModConfig.CustomPlayerColor != null ? ModConfig.CustomPlayerColor.Value : Color.yellow;
+                return new PlayerColorDefinition(-1, $"Свой цвет (#{ColorUtility.ToHtmlStringRGB(customCol)})", customCol);
+            }
             return Palette[0]; // Default Yellow
         }
 
@@ -64,7 +69,7 @@ namespace PingMaker.Configuration
             {
                 return Palette[savedIndex].Name;
             }
-            return "Свой цвет";
+            return $"Свой цвет (#{ColorUtility.ToHtmlStringRGB(ModConfig.CustomPlayerColor.Value)})";
         }
     }
 }

@@ -2,6 +2,22 @@
 
 All notable changes to **PingMaker** will be documented in this file.
 
+## [1.2.4] - 2026-11-15
+- **Interactive Color Picker & HEX Code Tool**:
+  - Added a full custom color creation studio in the Viking GUI settings. Players are no longer limited to 8 preset colors — choose from all 16.7 million 24-bit/32-bit RGB colors.
+  - **HEX Code Input**: Direct text input field for typing or pasting HEX codes (e.g. `#FF0055`, `#00FFCC`, `#FFAA00`) with instant validation, live preview, and one-click "Вставить" / "Копировать" clipboard buttons.
+  - **HSV Spectrum Sliders**: Interactive Hue (0°–360°), Saturation (0%–100%), and Brightness/Value (20%–100%) sliders with real-time preview.
+  - **Dynamic "Свой цвет" Slot**: Added a dedicated 9th custom color button in the palette grid displaying the active HEX code.
+- **Duplicate Color Prevention System**:
+  - The mod now prevents multiple players on the same server from using the same or visually indistinguishable colors (Euclidean RGB distance check).
+  - When another player has already claimed a color preset, the button displays a red `[Занят: Ник]` badge.
+  - Attempting to pick an occupied color displays an on-screen warning: *"К сожалению, данный цвет уже выбран игроком [Ник]! Пожалуйста, выберите другой цвет"*, keeping tactical player identification clear and unambiguous.
+- **Scrollable Window Layout**:
+  - Added a smooth scrollview to the Settings GUI, ensuring all settings, color tools, audio sliders, and visual options fit comfortably on any resolution (1080p, 1440p, 4K, 720p).
+  - Pinned the *"СОХРАНИТЬ И ЗАКРЫТЬ"* button permanently to the bottom of the window.
+- **Custom Color Network Synchronization**:
+  - Added `RPC_SYNC_HEX` and ZDO string replication (`"PingMaker_ColorHex"`) to broadcast exact custom HEX colors across clients and dedicated servers.
+
 ## [1.2.3] - 2026-11-15
 - **Multiplayer Player Color Sync & Cache Poisoning Overhaul**:
   - Replaced non-deterministic `string.GetHashCode()` fallback (which had randomized hash seeds per process in .NET Core, causing different players to see different random colors for the same teammate) with a deterministic cross-platform **FNV-1a hash algorithm**.

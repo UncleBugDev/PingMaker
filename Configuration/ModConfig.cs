@@ -15,6 +15,7 @@ namespace PingMaker.Configuration
         // Personal Color Settings
         public static ConfigEntry<int> ActiveColorIndex = null!;
         public static ConfigEntry<Color> CustomPlayerColor = null!;
+        public static ConfigEntry<string> CustomColorHex = null!;
 
         // Gameplay & Timers
         public static ConfigEntry<float> PingDuration = null!;
@@ -81,18 +82,9 @@ namespace PingMaker.Configuration
             ActiveColorIndex = config.Bind(
                 "2. Personal Color",
                 "ActiveColorIndex",
-                0, // 0 = Yellow by default
-                new ConfigDescription("Индекс выбранного личного цвета игрока в палитре (0=Жёлтый, 1=Оранжевый, 2=Красный, 3=Розовый, 4=Фиолетовый, 5=Синий, 6=Голубой, 7=Лайм).", new AcceptableValueRange<int>(0, 7))
+                0, // 0 = Yellow by default, -1 = Custom Color
+                new ConfigDescription("Индекс выбранного личного цвета игрока в палитре (0=Жёлтый, 1=Оранжевый, 2=Красный, 3=Розовый, 4=Фиолетовый, 5=Синий, 6=Голубой, 7=Лайм, -1=Пользовательский цвет).", new AcceptableValueRange<int>(-1, 7))
             );
-
-            ActiveColorIndex.SettingChanged += (sender, args) =>
-            {
-                if (ActiveColorIndex.Value >= 0 && ActiveColorIndex.Value < PlayerColors.Palette.Length)
-                {
-                    CustomPlayerColor.Value = PlayerColors.Palette[ActiveColorIndex.Value].Color;
-                }
-                Network.NetworkSync.BroadcastLocalPlayerColor();
-            };
 
             CustomPlayerColor = config.Bind(
                 "2. Personal Color",
@@ -100,6 +92,23 @@ namespace PingMaker.Configuration
                 new Color(1.00f, 0.90f, 0.05f, 1.0f),
                 new ConfigDescription("Пользовательский цвет игрока, если не используется стандартная палитра.")
             );
+
+            CustomColorHex = config.Bind(
+                "2. Personal Color",
+                "CustomColorHex",
+                "FFE60D",
+                new ConfigDescription("HEX-код пользовательского цвета викинга (RRGGBB).")
+            );
+
+            ActiveColorIndex.SettingChanged += (sender, args) =>
+            {
+                if (ActiveColorIndex.Value >= 0 && ActiveColorIndex.Value < PlayerColors.Palette.Length)
+                {
+                    CustomPlayerColor.Value = PlayerColors.Palette[ActiveColorIndex.Value].Color;
+                    CustomColorHex.Value = ColorUtility.ToHtmlStringRGB(CustomPlayerColor.Value);
+                }
+                Network.NetworkSync.BroadcastLocalPlayerColor();
+            };
 
             // General & Durations
             PingDuration = config.Bind(

@@ -12,7 +12,11 @@ A modern, highly customizable 3D world ping, tactical targeting, and multiplayer
 
 ## ✨ Features
 
-- **Personal Viking Color Palette**: Choose from 8 vibrant personal colors (Yellow, Orange, Red, Pink, Purple, Blue, Cyan, Lime). Every ping, marker, distance counter, creature lock-on, map tracker, and nameplate you create will be in **YOUR** distinctive color so your clan immediately recognizes who marked what!
+- **Personal Viking Color Palette & Color Picker Studio**:
+  - Choose from 8 vibrant quick-select preset colors (Yellow, Orange, Red, Pink, Purple, Blue, Cyan, Lime) OR create any custom color with the built-in **Interactive Color Picker & HEX Studio** (supporting all 16.7 million 24-bit/32-bit RGB colors).
+  - Type or paste any `#HEX` color code with one-click clipboard copy/paste, or adjust live Hue (0°–360°), Saturation, and Brightness sliders.
+  - **Duplicate Color Prevention**: Automatically checks connected teammates to prevent overlapping colors — if a teammate has already picked a color, the mod notifies you and reserves that color for them, ensuring every clan member is uniquely identifiable on the battlefield and map.
+  - Every ping, marker, distance counter, creature lock-on, map tracker, and nameplate you create will be in **YOUR** distinctive color!
 - **Tactical Lock-On Reticle (`↘ ⭕`)**:
   - Aiming at hostile creatures or beasts dynamically displays an animated tactical lock-on ring with a diagonal pointing arrow (`↘ ⭕` by default, or top arrow) and the creature's name with star rating (`★`).
   - Friendly players are strictly filtered out so targeting never locks onto allies or distracts during co-op combat.

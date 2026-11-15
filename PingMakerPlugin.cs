@@ -15,7 +15,7 @@ namespace PingMaker
     {
         public const string ModGUID = "com.author.pingmaker";
         public const string ModName = "PingMaker";
-        public const string ModVersion = "1.2.3";
+        public const string ModVersion = "1.2.4";
 
         public static PingMakerPlugin Instance { get; private set; } = null!;
         public static ManualLogSource Log => Instance.Logger;

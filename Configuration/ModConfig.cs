@@ -31,6 +31,12 @@ namespace PingMaker.Configuration
         public static ConfigEntry<int> TargetReticleMode = null!;
         public static ConfigEntry<int> ReticleArrowStyle = null!;
         public static ConfigEntry<float> MarkerScale = null!;
+
+        // Audio & Sound Effects
+        public static ConfigEntry<int> PingSoundPreset = null!;
+        public static ConfigEntry<float> MyPingVolume = null!;
+        public static ConfigEntry<float> OthersPingVolume = null!;
+        public static ConfigEntry<bool> MuteOtherPlayersPings = null!;
         public static ConfigEntry<float> AudioVolume = null!;
 
         public static void Init(ConfigFile config)
@@ -172,11 +178,40 @@ namespace PingMaker.Configuration
                 new ConfigDescription("Масштаб 3D-маркеров на экране.", new AcceptableValueRange<float>(0.5f, 2.0f))
             );
 
+            // 5. Audio
+            PingSoundPreset = config.Bind(
+                "5. Audio",
+                "PingSoundPreset",
+                0, // 0 = SoftClick, 1 = ClassicChime, 2 = NordicHorn, 3 = WoodKnock, 4 = Mute
+                new ConfigDescription("Стиль звука пинга (0 = Мягкий щелчок [по умолчанию], 1 = Кристальный звон, 2 = Рог викингов, 3 = Деревянный стук, 4 = Без звука).", new AcceptableValueRange<int>(0, 4))
+            );
+
+            MyPingVolume = config.Bind(
+                "5. Audio",
+                "MyPingVolume",
+                0.80f,
+                new ConfigDescription("Громкость звука для ваших собственных пингов.", new AcceptableValueRange<float>(0.0f, 1.0f))
+            );
+
+            OthersPingVolume = config.Bind(
+                "5. Audio",
+                "OthersPingVolume",
+                0.50f,
+                new ConfigDescription("Громкость звука для пингов от других игроков в мультиплеере.", new AcceptableValueRange<float>(0.0f, 1.0f))
+            );
+
+            MuteOtherPlayersPings = config.Bind(
+                "5. Audio",
+                "MuteOtherPlayersPings",
+                false,
+                new ConfigDescription("Полностью отключить звуковые сигналы от пингов других игроков (метки останутся видимыми).")
+            );
+
             AudioVolume = config.Bind(
-                "4. Visuals",
+                "5. Audio",
                 "AudioVolume",
                 1.0f,
-                new ConfigDescription("Громкость звукового сигнала при установке пинга.", new AcceptableValueRange<float>(0.0f, 1.0f))
+                new ConfigDescription("Общий мастер-регулятор громкости звуков мода.", new AcceptableValueRange<float>(0.0f, 1.0f))
             );
         }
 

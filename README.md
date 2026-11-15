@@ -29,6 +29,18 @@ A modern, highly customizable 3D world ping, tactical targeting, and multiplayer
   - Player pins on the minimap and large world map rotate in real-time according to their view/movement direction and glow in each player's personal color.
 - **True-Color Minimap Radar Pings**:
   - Custom pure white procedural radar ping sprite eliminates the game's default cyan texture color-blending bug — pink stays vibrant pink, yellow stays bright yellow, and orange stays orange.
+- **Procedural Sound Engine & Audio Presets**:
+  - Built-in real-time procedural audio synthesis generates crystal-clear audio clips directly in memory without requiring external `.wav` files (zero asset loading overhead, keeping DLL size tiny).
+  - 5 switchable sound styles:
+    - 🔘 **Мягкий щелчок (Soft Click)** *(Default)*: 45ms gentle tactical pulse (420 Hz -> 260 Hz), never causes ear fatigue during active combat.
+    - 🔔 **Кристальный звон (Classic Chime)**: 120ms bright dual-sine chime (988 Hz + 1318 Hz).
+    - 📯 **Рог викингов (Nordic Horn)**: 220ms resonant war horn with deep Nordic harmonics (165 Hz + 330/495 Hz).
+    - 🪵 **Деревянный стук (Wood Knock)**: 60ms acoustic percussion of an axe/shield strike.
+    - 🔇 **Без звука (Mute)**: Silent pings.
+  - **Instant Audio Preview**: Click the `▶` button in the GUI to audition any preset immediately.
+  - **Independent Volume Sliders**: Separate controls for your own pings (`0–100%`) and other players' pings (`0–100%`).
+  - **Mute Other Players' Audio**: One-click toggle to completely mute audio from other players' pings while keeping their 3D markers and map pins visible.
+  - **Anti-Spam Throttling**: Built-in 90ms audio cooldown prevents rapid ear-splitting ping cascades.
 - **Viking-Themed In-Game GUI & Native ESC Menu Button**:
   - Openable at any time by pressing `'` (Quote / Russian `э`) OR by clicking the new native **`"ᚱ PingMaker"`** button in the in-game ESC (Pause) menu!
   - Authentic Nordic oak plaque styling with Valheim gold borders, runic banners, and native game font.
@@ -90,6 +102,11 @@ Settings are saved in `BepInEx/config/com.author.pingmaker.cfg` and can be adjus
 - **ShowOffscreenArrow**: Show directional edge arrows when marker is off-screen (default: `true`).
 - **SyncToMinimap**: Mirror pings onto minimap and world map (default: `true`).
 - **ColorizeMapPlayers**: Colorize player direction arrows on maps (default: `true`).
+- **PingSoundPreset**: Ping sound effect preset index (`0` = Soft Click, `1` = Classic Chime, `2` = Nordic Horn, `3` = Wood Knock, `4` = Mute).
+- **MyPingVolume**: Volume for your own pings (default: `0.8` / 80%).
+- **OthersPingVolume**: Volume for other players' pings in multiplayer (default: `0.5` / 50%).
+- **MuteOtherPlayersPings**: Completely silence audio notifications from other players (default: `false`).
+- **AudioVolume**: Master volume multiplier for all mod sound effects (default: `1.0` / 100%).
 
 ---
 

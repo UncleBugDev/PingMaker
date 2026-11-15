@@ -114,7 +114,7 @@ namespace PingMaker.UI
             marker.Setup(data, trackedTransform, mapPin, targetCharacter);
             m_activeMarkers.Add(marker);
 
-            PlayPingAudio();
+            PlayPingAudio(data);
         }
 
         public void UpdateMapPinsColor()
@@ -178,47 +178,22 @@ namespace PingMaker.UI
             }
         }
 
-        private static AudioClip? s_pingAudioClip;
-
-        private void PlayPingAudio()
+        private void PlayPingAudio(PingPackageData data)
         {
-            if (ModConfig.AudioVolume.Value <= 0.01f) return;
+            if (ModConfig.AudioVolume.Value <= 0.001f) return;
 
-            try
+            bool isLocal = (Player.m_localPlayer != null && data.SenderName == Player.m_localPlayer.GetPlayerName());
+
+            // Если пинг от другого игрока и включено отключение звуков чужих пингов
+            if (!isLocal && ModConfig.MuteOtherPlayersPings.Value)
             {
-                if (s_pingAudioClip == null)
-                {
-                    s_pingAudioClip = CreateProceduralPingClip();
-                }
-
-                Camera cam = Utils.GetMainCamera();
-                Vector3 pos = cam != null ? cam.transform.position : Vector3.zero;
-                AudioSource.PlayClipAtPoint(s_pingAudioClip, pos, ModConfig.AudioVolume.Value);
-            }
-            catch
-            {
-                // Игнорируем исключения звукового устройства
-            }
-        }
-
-        private static AudioClip CreateProceduralPingClip()
-        {
-            const int sampleRate = 44100;
-            const float duration = 0.12f;
-            int sampleCount = (int)(sampleRate * duration);
-            float[] samples = new float[sampleCount];
-
-            for (int i = 0; i < sampleCount; i++)
-            {
-                float t = (float)i / sampleRate;
-                float decay = Mathf.Exp(-t * 22f);
-                float wave = (Mathf.Sin(2f * Mathf.PI * 987.77f * t) * 0.6f + Mathf.Sin(2f * Mathf.PI * 1318.5f * t) * 0.4f);
-                samples[i] = wave * decay;
+                return;
             }
 
-            AudioClip clip = AudioClip.Create("PingMaker_Chime", sampleCount, 1, sampleRate, false);
-            clip.SetData(samples, 0);
-            return clip;
+            float baseVol = isLocal ? ModConfig.MyPingVolume.Value : ModConfig.OthersPingVolume.Value;
+            float finalVol = baseVol * ModConfig.AudioVolume.Value;
+
+            ProceduralAudio.PlayPing(ModConfig.PingSoundPreset.Value, finalVol, data.WorldPosition);
         }
 
         private void OnDestroy()

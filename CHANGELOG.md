@@ -2,6 +2,23 @@
 
 All notable changes to **PingMaker** will be documented in this file.
 
+## [1.2.2] - 2026-11-15
+- **Procedural Sound Engine & Audio Presets**:
+  - Added a lightweight procedural audio engine with real-time in-memory `AudioClip` synthesis (zero external audio assets required, preventing missing file errors and keeping mod footprint minimal).
+  - 5 sound presets selectable directly in the Viking GUI:
+    - `0`: **Soft Click** (Default) — Ultra-gentle 45ms tactical click (420 Hz -> 260 Hz sine decay). Ideal for frequent pings without fatigue.
+    - `1`: **Classic Chime** — Clean crystalline dual-tone chime (988 Hz + 1318 Hz).
+    - `2`: **Nordic Horn** — Atmospheric 220ms Viking horn with resonant harmonics (165 Hz fundamental, 330/495 Hz overtone body).
+    - `3`: **Wood Knock** — Crisp 60ms acoustic percussion (wooden axe/shield thump).
+    - `4`: **Mute (None)** — Completely silent pings.
+  - Added instant audio preview button (`▶`) in the Settings GUI to audition presets before battle.
+  - Integrated 90ms anti-spam throttling for sound playback.
+- **Independent Audio Volumes & Mute for Other Players**:
+  - Added separate volume sliders for **My Pings** (`0% - 100%`, default `80%`) and **Friends' Pings** (`0% - 100%`, default `50%`), scaled by master mod volume.
+  - Added a one-click toggle: **"Полностью отключить звуки пингов от других игроков" (Mute sounds from other players)**. Visual 3D markers and map pins remain visible while disabling remote sound signals.
+- **Enhanced Settings GUI Layout**:
+  - Expanded Settings GUI height with adaptive screen bounds (`Mathf.Min(820f, Screen.height - 40f)`) to accommodate the new Sound & Volume control panel seamlessly.
+
 ## [1.2.1] - 2026-11-15
 - **Fixed Crosshair Aiming & Resolution Scaling**:
   - Implemented exact screen-space crosshair raycasting (`cam.ScreenPointToRay(crosshairPos)`), ensuring pings land precisely where the player's crosshair points regardless of display resolution, aspect ratio (16:9, 16:10, 21:9 Ultrawide, 32:9 Super-Ultrawide), or Valheim GUI scaling settings.

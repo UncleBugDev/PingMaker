@@ -45,8 +45,8 @@ namespace PingMaker.UI
         private void Awake()
         {
             Instance = this;
-            float w = 520f;
-            float h = 680f;
+            float w = 530f;
+            float h = Mathf.Min(820f, Screen.height - 40f);
             m_windowRect = new Rect((Screen.width - w) * 0.5f, (Screen.height - h) * 0.5f, w, h);
         }
 
@@ -110,8 +110,8 @@ namespace PingMaker.UI
             m_isOpen = true;
             m_isRebinding = false;
 
-            float w = 520f;
-            float h = 680f;
+            float w = 530f;
+            float h = Mathf.Min(820f, Screen.height - 40f);
             m_windowRect = new Rect((Screen.width - w) * 0.5f, (Screen.height - h) * 0.5f, w, h);
 
             ZCursor.LockState = CursorLockMode.None;
@@ -255,6 +255,43 @@ namespace PingMaker.UI
                 ModConfig.ReticleArrowStyle.Value = ModConfig.ReticleArrowStyle.Value == 0 ? 1 : 0;
             }
             GUILayout.EndHorizontal();
+
+            // ================= 4. Блок настроек звука =================
+            GUILayout.Space(8f);
+            GUILayout.Label("  ᚢ  4. НАСТРОЙКИ ЗВУКА И ГРОМКОСТИ", m_headerStyle);
+            GUILayout.Space(4f);
+
+            // Выбор стиля звука с кнопкой прослушивания
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Стиль звука пинга:", m_labelStyle, GUILayout.Width(160f));
+            string soundPresetName = ProceduralAudio.GetPresetName(ModConfig.PingSoundPreset.Value);
+            if (GUILayout.Button($"[  {soundPresetName}  ]", m_buttonStyle, GUILayout.Height(28f)))
+            {
+                ModConfig.PingSoundPreset.Value = (ModConfig.PingSoundPreset.Value + 1) % ProceduralAudio.PresetCount;
+                ProceduralAudio.PlayPreview(ModConfig.PingSoundPreset.Value, ModConfig.MyPingVolume.Value * ModConfig.AudioVolume.Value);
+            }
+            if (GUILayout.Button("▶", m_buttonStyle, GUILayout.Width(34f), GUILayout.Height(28f)))
+            {
+                ProceduralAudio.PlayPreview(ModConfig.PingSoundPreset.Value, ModConfig.MyPingVolume.Value * ModConfig.AudioVolume.Value);
+            }
+            GUILayout.EndHorizontal();
+
+            // Ползунок громкости своих пингов
+            GUILayout.BeginHorizontal();
+            GUILayout.Label($"Громкость моих пингов: <color=#E5B85C><b>{Mathf.RoundToInt(ModConfig.MyPingVolume.Value * 100f)}%</b></color>", m_labelStyle, GUILayout.Width(220f));
+            ModConfig.MyPingVolume.Value = GUILayout.HorizontalSlider(ModConfig.MyPingVolume.Value, 0.0f, 1.0f);
+            GUILayout.EndHorizontal();
+
+            // Ползунок громкости пингов друзей
+            GUILayout.BeginHorizontal();
+            GUILayout.Label($"Громкость пингов друзей: <color=#E5B85C><b>{Mathf.RoundToInt(ModConfig.OthersPingVolume.Value * 100f)}%</b></color>", m_labelStyle, GUILayout.Width(220f));
+            ModConfig.OthersPingVolume.Value = GUILayout.HorizontalSlider(ModConfig.OthersPingVolume.Value, 0.0f, 1.0f);
+            GUILayout.EndHorizontal();
+
+            GUILayout.Space(2f);
+
+            // Чекбокс глушения других игроков
+            ModConfig.MuteOtherPlayersPings.Value = GUILayout.Toggle(ModConfig.MuteOtherPlayersPings.Value, "  Полностью отключить звуки пингов от других игроков", m_toggleStyle);
 
             GUILayout.FlexibleSpace();
 
